@@ -31,6 +31,10 @@ android {
         versionName "4.1.1" //change also proprieties.txt in Hari folder
 
         android.defaultConfig.javaCompileOptions.annotationProcessorOptions.includeCompileClasspath = true
+        buildConfigField "String", "OPENAI_API_KEY", "\"${project.properties.get("OPENAI_API_KEY")}\""
+        buildConfigField "String", "ORGANIZATION_ID", "\"${project.properties.get("ORGANIZATION_ID")}\""
+        buildConfigField "String", "PROJECT_ID", "\"${project.properties.get("PROJECT_ID")}\""
+
     }
     buildTypes {
         release {

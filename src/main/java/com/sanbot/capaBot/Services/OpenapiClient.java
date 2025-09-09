@@ -1,4 +1,6 @@
 package com.sanbot.capaBot.Services;
+import com.sanbot.capaBot.BuildConfig;
+
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import retrofit2.Retrofit;
@@ -11,12 +13,13 @@ import okhttp3.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
+
 public class OpenapiClient {
 
     private static final String BASE_URL = "https://api.openai.com/";
-    private static final String API_KEY = "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";
-    private static final String ORGANIZATION_ID = "org-1ZLhs2dsh6Ko3XBrsftG2pFq";
-    private static final String PROJECT_ID = "proj_aSO9Px7DYzXc5XBJCx2HxOUG";
+    private static final String API_KEY = BuildConfig.OPENAI_API_KEY;
+    private static final String ORGANIZATION_ID = BuildConfig.ORGANIZATION_ID;
+    private static final String PROJECT_ID = BuildConfig.PROJECT_ID;
     private static Retrofit retrofit = null;
 
     public static Retrofit getClient() {
