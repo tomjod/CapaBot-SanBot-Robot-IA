@@ -26,7 +26,7 @@ android {
     defaultConfig {
         multiDexEnabled true
         applicationId "com.sanbot.capaBot"
-        minSdkVersion 19
+        minSdkVersion 21
         versionCode 20201220
         versionName "4.1.1" //change also proprieties.txt in Hari folder
 
@@ -110,5 +110,20 @@ dependencies {
     implementation 'org.jbundle.util.osgi.wrapped:org.jbundle.util.osgi.wrapped.org.apache.http.client:4.1.2'
     implementation files('libs/sanmoku-0.0.5.jar')
     implementation files('libs/sanmoku-feature-ex-0.0.1.jar')
+
+    // Retrofit con exclusiones
+    implementation ('com.squareup.retrofit2:retrofit:2.6.4') {
+        exclude group: 'com.google.gson'
+    }
+    implementation ('com.squareup.retrofit2:converter-gson:2.6.4') {
+        exclude group: 'com.google.gson'
+    }
+    implementation 'com.squareup.okhttp3:okhttp:3.12.13'
+    implementation 'com.squareup.okhttp3:logging-interceptor:3.12.13'
+
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2') {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    }
 
 }

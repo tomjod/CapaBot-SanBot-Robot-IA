@@ -194,7 +194,7 @@ public class MyWeatherActivity extends TopBaseActivity implements MyWeatherDownl
                     Toast.makeText(MyWeatherActivity.this, "No Internet Connection", Toast.LENGTH_LONG).show();
                 }
             });
-            speechManager.startSpeak("No Internet Connection", MySettings.getSpeakDefaultOption());
+            speechManager.startSpeak("No hay conexion a internet", MySettings.getSpeakDefaultOption());
             concludeSpeak(speechManager);
             finishThisActivity();
         }

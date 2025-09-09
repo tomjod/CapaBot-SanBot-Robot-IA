@@ -365,10 +365,10 @@ public class MySettings extends TopBaseActivity {
     private static SpeakOption speakSlowOption = new SpeakOption();
 
     public static boolean initializeSpeak() {
-        speakDefaultOption.setLanguageType(SpeakOption.LAG_ENGLISH_US);
+        speakDefaultOption.setLanguageType(SpeakOption.LAG_SPANISH_SPAIN);
         speakDefaultOption.setSpeed(50); //from 0 to 100 default: 40
         speakDefaultOption.setIntonation(40); //from 0 to 100 default: 30
-        speakSlowOption.setLanguageType(SpeakOption.LAG_ENGLISH_US);
+        speakSlowOption.setLanguageType(SpeakOption.LAG_SPANISH_SPAIN);
         speakSlowOption.setSpeed(35); //from 0 to 100 default: 40
         speakSlowOption.setIntonation(40); //from 0 to 100 default: 30
         return true;
