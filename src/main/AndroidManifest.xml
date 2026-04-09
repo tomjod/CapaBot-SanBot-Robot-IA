@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="com.sanbot.capaBot">
+    package="com.mundosvirtuales.visitorassistant">
     <!-- permissions -->
     <application
         android:name=".MyApp"
@@ -85,7 +85,7 @@
 
         <provider
             android:name="com.sanbot.opensdk.utils.GrammarProvider"
-            android:authorities="com.qihancloud.capaBot.grammar"
+            android:authorities="${applicationId}.grammar"
             android:exported="true" />
     </application>
 

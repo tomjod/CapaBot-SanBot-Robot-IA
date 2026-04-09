@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">CapaBot</string>
+    <string name="app_name">Mundos Virtuales IA Reception</string>
 
     <!--view names-->
     <string name="example_text">texto de ejemplo</string>

@@ -25,7 +25,7 @@ android {
 
     defaultConfig {
         multiDexEnabled true
-        applicationId "com.sanbot.capaBot"
+        applicationId "com.mundosvirtuales.visitorassistant"
         minSdkVersion 21
         versionCode 20201220
         versionName "4.1.1" //change also proprieties.txt in Hari folder
