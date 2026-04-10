@@ -5,6 +5,7 @@
  */
 package com.mundosvirtuales.visitorassistant;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -62,6 +63,12 @@ import static com.mundosvirtuales.visitorassistant.MyUtils.rotateAtRelativeAngle
 import static com.mundosvirtuales.visitorassistant.MyUtils.sleepy;
 
 public class MyDialogActivity extends TopBaseActivity {
+
+    public static Intent createLegacyIntent(Context context, String personName) {
+        Intent intent = new Intent(context, MyDialogActivity.class);
+        intent.putExtra("name", personName);
+        return intent;
+    }
 
     private final static String TAG = "IGOR-DIAL-AI"; // IA INTEGRADA: Se actualiza el TAG para reflejar la nueva versión.
 

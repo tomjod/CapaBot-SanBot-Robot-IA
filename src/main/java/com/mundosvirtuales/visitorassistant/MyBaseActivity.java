@@ -25,6 +25,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
+import com.mundosvirtuales.visitorassistant.visitorflow.VisitorFlowEntryDecider;
+import com.mundosvirtuales.visitorassistant.visitorflow.VisitorStartActivity;
 import com.mundosvirtuales.visitorassistant.video.VisionMediaDecoder;
 import com.sanbot.opensdk.base.TopBaseActivity;
 import com.sanbot.opensdk.beans.FuncConstant;
@@ -89,6 +91,8 @@ import static com.mundosvirtuales.visitorassistant.MyUtils.rotateAtRelativeAngle
  *  if the battery is low the robot goes to the ChargeActivity to go back to charging station.
  */
 public class  MyBaseActivity extends TopBaseActivity implements SurfaceHolder.Callback {
+
+    public static final String EXTRA_RETURN_TO_VISITOR_START = "return_to_visitor_start";
 
     private final static String TAG = "IGOR-BAS";
 
@@ -755,7 +759,7 @@ public class  MyBaseActivity extends TopBaseActivity implements SurfaceHolder.Ca
             //starts greeting with this person passing
             busy = true;
             //say hi
-            speechManager.startSpeak(getString(R.string.hi) + person_name, MySettings.getSpeakDefaultOption());
+            speechManager.startSpeak(buildGreeting(person_name), MySettings.getSpeakDefaultOption());
             concludeSpeak(speechManager);
 
             // 50% say Good morning/afternoon/ecc...
@@ -774,14 +778,54 @@ public class  MyBaseActivity extends TopBaseActivity implements SurfaceHolder.Ca
                 concludeSpeak(speechManager);
             }
 
+            VisitorFlowEntryDecider.EntryTarget entryTarget = resolveEntryTarget();
+
+            if (entryTarget == VisitorFlowEntryDecider.EntryTarget.GUIDED_VISITOR_FLOW) {
+                speechManager.startSpeak(buildVisitorFlowIntro(person_name), MySettings.getSpeakDefaultOption());
+                concludeSpeak(speechManager);
+            }
+
             //start the dialog activity.
-            Intent myIntent = new Intent(MyBaseActivity.this, MyDialogActivity.class);
-            //insert the name of the person in the annex
-            myIntent.putExtra("name", person_name);
+            Intent myIntent;
+            if (entryTarget == VisitorFlowEntryDecider.EntryTarget.GUIDED_VISITOR_FLOW) {
+                myIntent = VisitorStartActivity.createIntent(MyBaseActivity.this, person_name);
+            } else {
+                myIntent = MyDialogActivity.createLegacyIntent(MyBaseActivity.this, person_name);
+            }
             MyBaseActivity.this.startActivity(myIntent);
             //terminate this activity
             finish();
         }
+    }
+
+    private boolean shouldUseVisitorFlow() {
+        return resolveEntryTarget() == VisitorFlowEntryDecider.EntryTarget.GUIDED_VISITOR_FLOW;
+    }
+
+    private VisitorFlowEntryDecider.EntryTarget resolveEntryTarget() {
+        return VisitorFlowEntryDecider.resolve(BuildConfig.VISITOR_FLOW_ENABLED, BuildConfig.VISITOR_API_BASE_URL);
+    }
+
+    private String buildGreeting(String personName) {
+        if (personName == null) {
+            return getString(R.string.hi);
+        }
+        String normalized = personName.trim();
+        if (normalized.isEmpty()) {
+            return getString(R.string.hi);
+        }
+        return getString(R.string.hi) + ", " + normalized;
+    }
+
+    private String buildVisitorFlowIntro(String personName) {
+        if (personName == null) {
+            return getString(R.string.visitor_flow_entry_generic);
+        }
+        String normalized = personName.trim();
+        if (normalized.isEmpty()) {
+            return getString(R.string.visitor_flow_entry_generic);
+        }
+        return getString(R.string.visitor_flow_entry_named, normalized);
     }
 
 
@@ -810,6 +854,22 @@ public class  MyBaseActivity extends TopBaseActivity implements SurfaceHolder.Ca
             });}
         modularMotionManager.switchWander(false);
         Log.i(TAG, "Wander forced off now");
+    }
+
+    public static Intent createIntentFromVisitorStart(android.content.Context context) {
+        Intent intent = new Intent(context, MyBaseActivity.class);
+        intent.putExtra(EXTRA_RETURN_TO_VISITOR_START, true);
+        return intent;
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (getIntent() != null && getIntent().getBooleanExtra(EXTRA_RETURN_TO_VISITOR_START, false)) {
+            startActivity(new Intent(this, com.mundosvirtuales.visitorassistant.visitorflow.VisitorStartActivity.class));
+            finish();
+            return;
+        }
+        super.onBackPressed();
     }
 
     public void updateView() {

@@ -9,6 +9,9 @@
 
 # Local config
 local.properties
+backend/.venv/
+backend/__pycache__/
+backend/.pytest_cache/
 
 # Logs
 *.log
@@ -36,6 +39,7 @@ google-services.plist
 
 # Jetpack Compose cache (opzionale)
 .compose-cache/
+.atl/
 
 # OS-specific files
 .DS_Store

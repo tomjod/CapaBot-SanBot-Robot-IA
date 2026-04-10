@@ -1,0 +1,23 @@
+[
+  {
+    "id": "reception-ventas",
+    "display_name": "Ventas",
+    "telegram_chat_id": "-100100200300",
+    "email": "ventas@example.com",
+    "email_enabled": true
+  },
+  {
+    "id": "reception-soporte",
+    "display_name": "Soporte",
+    "telegram_chat_id": "-100100200301",
+    "email": null,
+    "email_enabled": false
+  },
+  {
+    "id": "reception-demo",
+    "display_name": "Demostraciones",
+    "telegram_chat_id": null,
+    "email": "demo@example.com",
+    "email_enabled": true
+  }
+]

@@ -13,7 +13,7 @@
         tools:ignore="GoogleAppIndexingWarning">
         <!-- ACTIVITIES -->
         <activity
-            android:name=".MyBaseActivity"
+            android:name=".visitorflow.VisitorStartActivity"
             android:exported="true"
             android:hardwareAccelerated="true"
             android:launchMode="singleTask">
@@ -22,6 +22,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".MyBaseActivity"
+            android:exported="true"
+            android:hardwareAccelerated="true"
+            android:launchMode="singleTask" />
         <activity android:name=".MyCalendarActivity">
             <meta-data
                 android:name="RECOGNIZE_MODE"
@@ -30,6 +35,30 @@
         <activity android:name=".MyChargeActivity" />
         <activity
             android:name=".MyDialogActivity"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="stateHidden">
+            <meta-data
+                android:name="RECOGNIZE_MODE"
+                android:value="1" />
+        </activity>
+        <activity
+            android:name=".visitorflow.VisitorContactActivity"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="stateHidden">
+            <meta-data
+                android:name="RECOGNIZE_MODE"
+                android:value="1" />
+        </activity>
+        <activity
+            android:name=".visitorflow.VisitorLeaveMessageActivity"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="stateHidden">
+            <meta-data
+                android:name="RECOGNIZE_MODE"
+                android:value="1" />
+        </activity>
+        <activity
+            android:name=".visitorflow.VisitorInformationActivity"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="stateHidden">
             <meta-data

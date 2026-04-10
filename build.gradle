@@ -20,6 +20,39 @@ buildscript {
 
 apply plugin: 'com.android.application'
 
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withInputStream { stream ->
+        localProperties.load(stream)
+    }
+}
+
+def normalizedStringProperty = { String name, String fallbackValue = "" ->
+    def raw = project.hasProperty(name) ? project.property(name) : localProperties.getProperty(name, fallbackValue)
+    return raw == null ? "" : raw.toString().trim()
+}
+
+def normalizedBooleanProperty = { String name, String fallbackValue ->
+    if (!project.hasProperty(name) && localProperties.getProperty(name) == null) {
+        return fallbackValue
+    }
+    def raw = project.hasProperty(name) ? project.property(name) : localProperties.getProperty(name)
+    if (raw == null) {
+        return fallbackValue
+    }
+    def normalized = raw.toString().trim().toLowerCase()
+    return ["1", "true", "yes", "on"].contains(normalized) ? "true" : "false"
+}
+
+def openAiApiKey = project.hasProperty("OPENAI_API_KEY") ? project.property("OPENAI_API_KEY") : ""
+def organizationId = project.hasProperty("ORGANIZATION_ID") ? project.property("ORGANIZATION_ID") : ""
+def projectId = project.hasProperty("PROJECT_ID") ? project.property("PROJECT_ID") : ""
+def visitorApiBaseUrl = normalizedStringProperty("VISITOR_API_BASE_URL")
+def visitorDeviceId = normalizedStringProperty("VISITOR_DEVICE_ID")
+def visitorLocationLabel = normalizedStringProperty("VISITOR_LOCATION_LABEL")
+def visitorFlowEnabled = normalizedBooleanProperty("VISITOR_FLOW_ENABLED", (!visitorApiBaseUrl.isEmpty()).toString())
+
 android {
     compileSdkVersion 26
 
@@ -31,9 +64,13 @@ android {
         versionName "4.1.1" //change also proprieties.txt in Hari folder
 
         android.defaultConfig.javaCompileOptions.annotationProcessorOptions.includeCompileClasspath = true
-        buildConfigField "String", "OPENAI_API_KEY", "\"${project.properties.get("OPENAI_API_KEY")}\""
-        buildConfigField "String", "ORGANIZATION_ID", "\"${project.properties.get("ORGANIZATION_ID")}\""
-        buildConfigField "String", "PROJECT_ID", "\"${project.properties.get("PROJECT_ID")}\""
+        buildConfigField "String", "OPENAI_API_KEY", "\"${openAiApiKey}\""
+        buildConfigField "String", "ORGANIZATION_ID", "\"${organizationId}\""
+        buildConfigField "String", "PROJECT_ID", "\"${projectId}\""
+        buildConfigField "String", "VISITOR_API_BASE_URL", "\"${visitorApiBaseUrl}\""
+        buildConfigField "boolean", "VISITOR_FLOW_ENABLED", visitorFlowEnabled
+        buildConfigField "String", "VISITOR_DEVICE_ID", "\"${visitorDeviceId}\""
+        buildConfigField "String", "VISITOR_LOCATION_LABEL", "\"${visitorLocationLabel}\""
 
     }
     buildTypes {
