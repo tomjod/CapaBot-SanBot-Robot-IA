@@ -64,10 +64,12 @@ public class VisitorFlowPresenter {
     }
 
     public void start() {
+        VisitorFlowLogger.info("contactFlow.start", "loading contacts");
         loadContacts();
     }
 
     public void onRetry() {
+        VisitorFlowLogger.info("contactFlow.retry", "screen=" + (currentState != null ? currentState.getScreen() : null));
         if (lastSelectedContact != null && currentState != null && currentState.getScreen() == VisitorFlowState.Screen.FAILED) {
             submitContact(lastSelectedContact, lastSubmittedVisitorName);
             return;
@@ -77,8 +79,14 @@ public class VisitorFlowPresenter {
 
     public void onContactSelected(VisitorDtos.ContactSummary contact, String visitorName) {
         if (contact == null) {
+            VisitorFlowLogger.warn("contactFlow.select.ignored", "reason=contact-null");
             return;
         }
+
+        VisitorFlowLogger.info(
+                "contactFlow.select",
+                VisitorFlowLogger.summarizeContact(contact) + ", visitorName=" + (VisitorNameNormalizer.normalizeOrNull(visitorName) != null ? "provided" : "missing")
+        );
 
         if (!contact.isAvailable()) {
             currentState = VisitorFlowState.unavailable(contacts, unavailableMessage, contact.getId());
@@ -113,6 +121,7 @@ public class VisitorFlowPresenter {
                     contactCacheStore.saveContacts(contacts);
                 }
                 String message = contacts.isEmpty() ? emptyMessage : readyMessage;
+                VisitorFlowLogger.info("contactFlow.contacts.loaded", VisitorFlowLogger.summarizeContacts(contacts));
                 currentState = VisitorFlowState.ready(contacts, message, contacts.isEmpty(), false);
                 view.render(currentState);
                 robotSpeechPort.speak(message);
@@ -120,6 +129,7 @@ public class VisitorFlowPresenter {
 
             @Override
             public void onError(String message) {
+                VisitorFlowLogger.warn("contactFlow.contacts.error", "message=" + message);
                 contacts = Collections.emptyList();
                 currentState = VisitorFlowState.maintenance(maintenanceMessage, true);
                 view.render(currentState);
@@ -129,6 +139,10 @@ public class VisitorFlowPresenter {
     }
 
     private void submitContact(final VisitorDtos.ContactSummary contact, final String visitorName) {
+        VisitorFlowLogger.info(
+                "contactFlow.submit",
+                VisitorFlowLogger.summarizeContact(contact) + ", visitorName=" + visitorName
+        );
         lastSelectedContact = contact;
         lastSubmittedVisitorName = visitorName;
         currentState = VisitorFlowState.submitting(contacts, contact.getDisplayName(), contact.getId());

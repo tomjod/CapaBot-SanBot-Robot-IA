@@ -77,7 +77,7 @@
     <string name="visitor_start_checking">Un momento, estoy verificando que la recepción esté disponible…</string>
     <string name="visitor_start_talk_to_person">Anunciar llegada</string>
     <string name="visitor_start_leave_message">Dejar un mensaje</string>
-    <string name="visitor_start_request_information">Solicitar información</string>
+    <string name="visitor_start_request_information">Ver información de la empresa</string>
     <string name="visitor_start_choose_option">Seleccione una opción</string>
     <string name="visitor_start_company_caption">Busso Group · holding empresarial</string>
     <string name="visitor_start_legacy_base_link">modo base</string>
@@ -133,6 +133,8 @@
     <string name="visitor_maintenance_title">Recepción temporalmente fuera de servicio</string>
     <string name="visitor_maintenance_message">En este momento no puedo continuar con la recepción. Por favor, pida ayuda al personal o inténtelo nuevamente en unos minutos.</string>
     <string name="visitor_maintenance_retry">Reintentar</string>
+    <string name="visitor_start_maintenance_title">Recepción asistida temporalmente fuera de servicio</string>
+    <string name="visitor_start_maintenance_message">Por ahora no puedo anunciar llegadas ni tomar mensajes. Puede usar &quot;Ver información de la empresa&quot; mientras se restablece el servicio.</string>
     <string name="visitor_information_title">Busso Group</string>
     <string name="visitor_information_subtitle">Información breve para orientar su visita de forma rápida y clara.</string>
     <string name="visitor_information_initial_detail">Toque un tema para ver datos clave sobre Busso Group, sus áreas de trabajo y la mejor forma de contacto.</string>

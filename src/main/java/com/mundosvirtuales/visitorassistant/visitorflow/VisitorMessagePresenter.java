@@ -76,13 +76,17 @@ public class VisitorMessagePresenter {
     }
 
     public void start() {
+        VisitorFlowLogger.info("messageFlow.start", "loading contacts");
         loadContacts();
     }
 
     public void onContactSelected(VisitorDtos.ContactSummary contact) {
         if (contact == null) {
+            VisitorFlowLogger.warn("messageFlow.select.ignored", "reason=contact-null");
             return;
         }
+
+        VisitorFlowLogger.info("messageFlow.select", VisitorFlowLogger.summarizeContact(contact));
 
         selectedContact = contact;
         if (!contact.isAvailable()) {
@@ -108,6 +112,12 @@ public class VisitorMessagePresenter {
     }
 
     public void onSubmit(String visitorName) {
+        VisitorFlowLogger.info(
+                "messageFlow.submit.attempt",
+                "selectedContact=" + (selectedContact != null ? selectedContact.getId() : "<none>")
+                        + ", visitorName=" + (VisitorNameNormalizer.normalizeOrNull(visitorName) != null ? "provided" : "missing")
+                        + ", messageLength=" + (draftMessage == null ? 0 : draftMessage.trim().length())
+        );
         if (selectedContact == null) {
             renderReady(validationContactMessage, false, false);
             robotSpeechPort.speak(validationContactMessage);
@@ -139,6 +149,7 @@ public class VisitorMessagePresenter {
     }
 
     public void onRetry() {
+        VisitorFlowLogger.info("messageFlow.retry", "screen=" + (currentState != null ? currentState.getScreen() : null));
         if (selectedContact != null && currentState != null && currentState.getScreen() == VisitorMessageFlowState.Screen.FAILED && isDraftValid(draftMessage)) {
             submitMessage(selectedContact, lastSubmittedVisitorName, draftMessage.trim());
             return;
@@ -167,6 +178,7 @@ public class VisitorMessagePresenter {
                 }
 
                 String message = contacts.isEmpty() ? emptyContactsMessage : readyMessage;
+                VisitorFlowLogger.info("messageFlow.contacts.loaded", VisitorFlowLogger.summarizeContacts(contacts));
                 currentState = VisitorMessageFlowState.ready(contacts, message, contacts.isEmpty(), false, null, draftMessage, false);
                 view.render(currentState);
                 robotSpeechPort.speak(message);
@@ -174,6 +186,7 @@ public class VisitorMessagePresenter {
 
             @Override
             public void onError(String message) {
+                VisitorFlowLogger.warn("messageFlow.contacts.error", "message=" + message);
                 contacts = Collections.emptyList();
                 currentState = VisitorMessageFlowState.maintenance(maintenanceMessage, true, draftMessage);
                 view.render(currentState);
@@ -185,6 +198,10 @@ public class VisitorMessagePresenter {
     private void submitMessage(final VisitorDtos.ContactSummary contact,
                                final String visitorName,
                                final String normalizedMessage) {
+        VisitorFlowLogger.info(
+                "messageFlow.submit",
+                VisitorFlowLogger.summarizeContact(contact) + ", visitorName=" + visitorName + ", messageLength=" + normalizedMessage.length()
+        );
         lastSubmittedVisitorName = visitorName;
         currentState = VisitorMessageFlowState.submitting(
                 contacts,

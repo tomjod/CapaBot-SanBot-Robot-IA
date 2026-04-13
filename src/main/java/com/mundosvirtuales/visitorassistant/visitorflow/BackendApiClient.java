@@ -43,6 +43,11 @@ public class BackendApiClient implements ContactCatalogGateway, NotificationDisp
         this.location = location;
         this.configurationErrorMessage = configurationErrorMessage;
         this.service = createService(baseUrl);
+        VisitorFlowLogger.info(
+                "backend.init",
+                VisitorFlowLogger.summarizeBaseConfig(baseUrl, deviceId, location, this.defaultVisitorName)
+                        + ", serviceCreated=" + (this.service != null)
+        );
     }
 
     BackendApiClient(VisitorBackendService service,
@@ -59,15 +64,23 @@ public class BackendApiClient implements ContactCatalogGateway, NotificationDisp
 
     @Override
     public void fetchContacts(final ContactCatalogGateway.Callback callback) {
+        final long requestId = VisitorFlowLogger.nextRequestId();
         if (service == null) {
+            VisitorFlowLogger.warn("backend.fetchContacts.skipped", "requestId=" + requestId + ", reason=service-null");
             callback.onError(configurationErrorMessage);
             return;
         }
+
+        VisitorFlowLogger.info("backend.fetchContacts.start", "requestId=" + requestId);
 
         service.getContacts().enqueue(new retrofit2.Callback<List<VisitorDtos.ContactDto>>() {
             @Override
             public void onResponse(Call<List<VisitorDtos.ContactDto>> call, Response<List<VisitorDtos.ContactDto>> response) {
                 if (!response.isSuccessful() || response.body() == null) {
+                    VisitorFlowLogger.warn(
+                            "backend.fetchContacts.httpError",
+                            "requestId=" + requestId + ", code=" + response.code() + ", bodyPresent=" + (response.body() != null)
+                    );
                     callback.onError(buildHttpErrorMessage(response.code(), null));
                     return;
                 }
@@ -76,11 +89,20 @@ public class BackendApiClient implements ContactCatalogGateway, NotificationDisp
                 for (VisitorDtos.ContactDto dto : response.body()) {
                     contacts.add(dto.toSummary());
                 }
+                VisitorFlowLogger.info(
+                        "backend.fetchContacts.success",
+                        "requestId=" + requestId + ", " + VisitorFlowLogger.summarizeContacts(contacts)
+                );
                 callback.onSuccess(contacts);
             }
 
             @Override
             public void onFailure(Call<List<VisitorDtos.ContactDto>> call, Throwable throwable) {
+                VisitorFlowLogger.error(
+                        "backend.fetchContacts.failure",
+                        "requestId=" + requestId + ", callCanceled=" + call.isCanceled(),
+                        throwable
+                );
                 callback.onError("No pude cargar los contactos. Revise la conexión con el backend.");
             }
         });
@@ -114,27 +136,50 @@ public class BackendApiClient implements ContactCatalogGateway, NotificationDisp
 
     private void submitNotificationRequest(VisitorDtos.NotificationRequestDto request,
                                            final NotificationDispatchGateway.Callback callback) {
+        final long requestId = VisitorFlowLogger.nextRequestId();
         if (service == null) {
+            VisitorFlowLogger.warn(
+                    "backend.submitNotification.skipped",
+                    "requestId=" + requestId + ", reason=service-null, " + VisitorFlowLogger.summarizeNotification(request)
+            );
             callback.onError(configurationErrorMessage, false);
             return;
         }
+
+        VisitorFlowLogger.info(
+                "backend.submitNotification.start",
+                "requestId=" + requestId + ", " + VisitorFlowLogger.summarizeNotification(request)
+        );
 
         service.submitNotification(request)
                 .enqueue(new retrofit2.Callback<VisitorDtos.NotificationResponseDto>() {
                     @Override
                     public void onResponse(Call<VisitorDtos.NotificationResponseDto> call, Response<VisitorDtos.NotificationResponseDto> response) {
                         if (response.isSuccessful() && response.body() != null) {
+                            VisitorFlowLogger.info(
+                                    "backend.submitNotification.success",
+                                    "requestId=" + requestId + ", status=" + response.body().status + ", retryable=" + response.body().retryable
+                            );
                             callback.onSuccess(response.body().toResult());
                             return;
                         }
 
                         boolean retryable = response.code() >= 500 || response.code() == 408 || response.code() == 504;
                         String message = buildHttpErrorMessage(response.code(), extractErrorDetail(response));
+                        VisitorFlowLogger.warn(
+                                "backend.submitNotification.httpError",
+                                "requestId=" + requestId + ", code=" + response.code() + ", retryable=" + retryable + ", message=" + message
+                        );
                         callback.onError(message, retryable);
                     }
 
                     @Override
                     public void onFailure(Call<VisitorDtos.NotificationResponseDto> call, Throwable throwable) {
+                        VisitorFlowLogger.error(
+                                "backend.submitNotification.failure",
+                                "requestId=" + requestId + ", callCanceled=" + call.isCanceled(),
+                                throwable
+                        );
                         callback.onError("No pude enviar la notificación. Revise la conexión e inténtelo nuevamente.", true);
                     }
                 });
@@ -142,8 +187,12 @@ public class BackendApiClient implements ContactCatalogGateway, NotificationDisp
 
     private static VisitorBackendService createService(String baseUrl) {
         if (TextUtils.isEmpty(baseUrl)) {
+            VisitorFlowLogger.warn("backend.createService.invalidBaseUrl", "baseUrl=<empty>");
             return null;
         }
+
+        String sanitizedBaseUrl = ensureTrailingSlash(baseUrl);
+        VisitorFlowLogger.info("backend.createService", "baseUrl=" + sanitizedBaseUrl);
 
         OkHttpClient httpClient = new OkHttpClient.Builder()
                 .connectTimeout(5, TimeUnit.SECONDS)
@@ -152,7 +201,7 @@ public class BackendApiClient implements ContactCatalogGateway, NotificationDisp
                 .build();
 
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(ensureTrailingSlash(baseUrl))
+                .baseUrl(sanitizedBaseUrl)
                 .addConverterFactory(GsonConverterFactory.create())
                 .client(httpClient)
                 .build();

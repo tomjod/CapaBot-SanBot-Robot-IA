@@ -66,7 +66,7 @@ public class VisitorStartActivity extends TopBaseActivity implements VisitorLaun
                 this,
                 apiClient,
                 getString(R.string.visitor_start_checking),
-                getString(R.string.visitor_maintenance_message)
+                getString(R.string.visitor_start_maintenance_message)
         );
 
         talkButton.setOnClickListener(view -> route(VisitorStartNavigation.VisitReason.TALK_TO_PERSON));
@@ -75,6 +75,11 @@ public class VisitorStartActivity extends TopBaseActivity implements VisitorLaun
         legacyBaseLink.setPaintFlags(legacyBaseLink.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
         legacyBaseLink.setOnClickListener(view -> route(VisitorStartNavigation.VisitReason.LEGACY_BASE));
         maintenanceRetryButton.setOnClickListener(view -> presenter.onRetry());
+
+        VisitorFlowLogger.info(
+                "launcher.activityCreated",
+                "visitorName=" + buildVisitorName() + ", apiBaseUrl=" + BuildConfig.VISITOR_API_BASE_URL + ", deviceId=" + BuildConfig.VISITOR_DEVICE_ID
+        );
 
         presenter.start();
     }
@@ -85,31 +90,68 @@ public class VisitorStartActivity extends TopBaseActivity implements VisitorLaun
             currentState = state;
             boolean maintenance = state.getScreen() == VisitorLauncherState.Screen.MAINTENANCE;
             boolean checking = state.getScreen() == VisitorLauncherState.Screen.CHECKING;
-            boolean enabled = state.isVisitorAccessEnabled();
+            boolean receptionEnabled = state.isReceptionAccessEnabled();
+            boolean informationEnabled = state.isInformationAccessEnabled();
+            boolean legacyEnabled = state.isLegacyAccessEnabled();
 
-            talkButton.setEnabled(enabled);
-            leaveMessageButton.setEnabled(enabled);
-            requestInformationButton.setEnabled(enabled);
-            legacyBaseLink.setEnabled(enabled);
-            legacyBaseLink.setAlpha(enabled ? 1f : 0.5f);
+            talkButton.setEnabled(receptionEnabled);
+            leaveMessageButton.setEnabled(receptionEnabled);
+            requestInformationButton.setEnabled(informationEnabled);
+            talkButton.setAlpha(receptionEnabled ? 1f : 0.45f);
+            leaveMessageButton.setAlpha(receptionEnabled ? 1f : 0.45f);
+            requestInformationButton.setAlpha(informationEnabled ? 1f : 0.45f);
+            legacyBaseLink.setEnabled(legacyEnabled);
+            legacyBaseLink.setAlpha(legacyEnabled ? 1f : 0.5f);
 
             statusView.setText(checking ? state.getMessage() : "");
             statusView.setVisibility(checking ? View.VISIBLE : View.GONE);
             checkingProgressBar.setVisibility(checking ? View.VISIBLE : View.GONE);
 
             maintenanceOverlay.setVisibility(maintenance ? View.VISIBLE : View.GONE);
-            maintenanceTitleView.setText(R.string.visitor_maintenance_title);
+            maintenanceTitleView.setText(R.string.visitor_start_maintenance_title);
             maintenanceMessageView.setText(state.getMessage());
             maintenanceRetryButton.setVisibility(state.isRetryEnabled() ? View.VISIBLE : View.GONE);
+
+            VisitorFlowLogger.info(
+                    "launcher.render",
+                    "screen=" + state.getScreen()
+                            + ", receptionEnabled=" + receptionEnabled
+                            + ", informationEnabled=" + informationEnabled
+                            + ", legacyEnabled=" + legacyEnabled
+                            + ", checking=" + checking
+                            + ", maintenance=" + maintenance
+            );
         });
     }
 
     private void route(VisitorStartNavigation.VisitReason visitReason) {
-        if (currentState == null || !currentState.isVisitorAccessEnabled()) {
+        if (currentState == null) {
+            VisitorFlowLogger.warn("launcher.route.blocked", "reason=" + visitReason + ", currentState=null");
             return;
         }
 
         VisitorStartNavigation.Target target = VisitorStartNavigation.resolveTarget(visitReason);
+        VisitorFlowLogger.info("launcher.route.request", "reason=" + visitReason + ", target=" + target + ", screen=" + currentState.getScreen());
+
+        if (target == VisitorStartNavigation.Target.CONTACT_FLOW
+                || target == VisitorStartNavigation.Target.MESSAGE_FLOW) {
+            if (!currentState.isReceptionAccessEnabled()) {
+                VisitorFlowLogger.warn("launcher.route.blocked", "reason=" + visitReason + ", target=" + target + ", receptionAccess=false");
+                return;
+            }
+        }
+
+        if (target == VisitorStartNavigation.Target.INFORMATION_FLOW
+                && !currentState.isInformationAccessEnabled()) {
+            VisitorFlowLogger.warn("launcher.route.blocked", "reason=" + visitReason + ", target=" + target + ", informationAccess=false");
+            return;
+        }
+
+        if (target == VisitorStartNavigation.Target.LEGACY_BASE
+                && !currentState.isLegacyAccessEnabled()) {
+            VisitorFlowLogger.warn("launcher.route.blocked", "reason=" + visitReason + ", target=" + target + ", legacyAccess=false");
+            return;
+        }
 
         if (target == VisitorStartNavigation.Target.CONTACT_FLOW) {
             startActivity(VisitorContactActivity.createIntent(this, buildVisitorName()));
