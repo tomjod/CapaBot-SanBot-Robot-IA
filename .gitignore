@@ -12,6 +12,8 @@ local.properties
 backend/.venv/
 backend/__pycache__/
 backend/.pytest_cache/
+**/__pycache__/
+*.pyc
 *.env
 backend/.env
 

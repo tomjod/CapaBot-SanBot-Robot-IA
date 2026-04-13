@@ -1,23 +1,28 @@
 [
   {
-    "id": "reception-ventas",
-    "display_name": "Ventas",
-    "telegram_chat_id": "-100100200300",
-    "email": "ventas@example.com",
-    "email_enabled": true
+    "id": "mv-productdesigner",
+    "display_name": "Alvaro Hinojosa",
+    "job_title": "Product Designer",
+    "company": "mundos_virtuales",
+    "enabled": true,
+    "phone": "+56982477470",
+    "telegram_chat_id": "1758890509",
+    "telegram_user_id": "1758890509",
+    "telegram_username": null,
+    "email": null,
+    "email_enabled": false
   },
   {
-    "id": "reception-Desarrollo",
+    "id": "mv-developer-001",
     "display_name": "Alexis Ocando",
+    "job_title": "Developer",
+    "company": "mundos_virtuales",
+    "enabled": true,
+    "phone": "56937645644",
     "telegram_chat_id": "919408492",
-    "email": "aocando@mundos-virtuales.com",
-    "email_enabled": true
-  },
-  {
-    "id": "reception-demo",
-    "display_name": "Demostraciones",
-    "telegram_chat_id": null,
-    "email": "demo@example.com",
-    "email_enabled": true
+    "telegram_user_id": "919408492",
+    "telegram_username": "tomjod",
+    "email": null,
+    "email_enabled": false
   }
 ]

@@ -5,6 +5,7 @@ import unittest
 
 from backend.app.runtime import BackendSettings, build_runtime
 from backend.app.infra.providers.email_provider import MailtrapEmailProvider, SmtpEmailProvider, StubEmailProvider
+from backend.app.infra.json_pending_registrations import JsonPendingTelegramRegistrationRepository
 from backend.app.infra.providers.telegram_provider import StubTelegramProvider, TelegramBotProvider
 
 
@@ -14,6 +15,7 @@ class RuntimeWiringTest(unittest.TestCase):
 
         self.assertIsInstance(runtime.telegram_provider, StubTelegramProvider)
         self.assertIsInstance(runtime.email_provider, StubEmailProvider)
+        self.assertIsInstance(runtime.pending_registration_repository, JsonPendingTelegramRegistrationRepository)
         self.assertFalse(runtime.settings.allow_stub_delivery)
 
     def test_uses_real_providers_when_credentials_are_present(self) -> None:
@@ -21,6 +23,7 @@ class RuntimeWiringTest(unittest.TestCase):
             "VISITOR_NOTIFY_TELEGRAM_BOT_TOKEN": "token-123",
             "VISITOR_NOTIFY_TELEGRAM_API_BASE_URL": "https://telegram.internal",
             "VISITOR_NOTIFY_TELEGRAM_TIMEOUT_SECONDS": "15",
+            "VISITOR_NOTIFY_TELEGRAM_REGISTRATION_HELP_TEXT": "Escribile a RRHH.",
             "VISITOR_NOTIFY_EMAIL_MAILTRAP_TOKEN": "mailtrap-token",
             "VISITOR_NOTIFY_EMAIL_FROM": "robot@example.com",
             "VISITOR_NOTIFY_EMAIL_FROM_NAME": "CapaBot",
@@ -33,6 +36,8 @@ class RuntimeWiringTest(unittest.TestCase):
         self.assertIsInstance(runtime.email_provider, MailtrapEmailProvider)
         self.assertEqual(runtime.settings.telegram_api_base_url, "https://telegram.internal")
         self.assertEqual(runtime.settings.telegram_timeout_seconds, 15.0)
+        self.assertEqual(runtime.settings.telegram_registration_help_text, "Escribile a RRHH.")
+        self.assertTrue(str(runtime.settings.pending_registrations_path).endswith("pending_registrations.json"))
         self.assertEqual(runtime.settings.email_mailtrap_token, "mailtrap-token")
         self.assertEqual(runtime.settings.email_from_name, "CapaBot")
         self.assertEqual(runtime.settings.email_timeout_seconds, 7.5)

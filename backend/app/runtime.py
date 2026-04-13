@@ -7,7 +7,9 @@ from typing import Mapping
 
 from backend.app.domain.message_builder import TemplateMessageBuilder
 from backend.app.domain.notification_service import NotificationService
+from backend.app.domain.telegram_onboarding import TelegramOnboardingService
 from backend.app.infra.json_contacts import JsonContactRepository
+from backend.app.infra.json_pending_registrations import JsonPendingTelegramRegistrationRepository
 from backend.app.infra.providers.email_provider import MailtrapEmailProvider, SmtpEmailProvider, StubEmailProvider
 from backend.app.infra.providers.telegram_provider import StubTelegramProvider, TelegramBotProvider
 
@@ -21,9 +23,11 @@ def _parse_bool(value: str | None, default: bool) -> bool:
 @dataclass(frozen=True)
 class BackendSettings:
     contacts_path: Path
+    pending_registrations_path: Path
     telegram_bot_token: str | None
     telegram_api_base_url: str
     telegram_timeout_seconds: float
+    telegram_registration_help_text: str
     email_mailtrap_token: str | None
     email_smtp_host: str | None
     email_from: str | None
@@ -36,12 +40,23 @@ class BackendSettings:
     def from_env(cls, env: Mapping[str, str] | None = None) -> "BackendSettings":
         values = env or os.environ
         default_contacts_path = Path(__file__).resolve().parent / "data" / "contacts.json"
+        default_pending_registrations_path = Path(__file__).resolve().parent / "data" / "pending_registrations.json"
         raw_contacts_path = values.get("VISITOR_NOTIFY_CONTACTS_PATH")
+        raw_pending_registrations_path = values.get("VISITOR_NOTIFY_PENDING_REGISTRATIONS_PATH")
         return cls(
             contacts_path=Path(raw_contacts_path) if raw_contacts_path else default_contacts_path,
+            pending_registrations_path=(
+                Path(raw_pending_registrations_path)
+                if raw_pending_registrations_path
+                else default_pending_registrations_path
+            ),
             telegram_bot_token=values.get("VISITOR_NOTIFY_TELEGRAM_BOT_TOKEN") or None,
             telegram_api_base_url=values.get("VISITOR_NOTIFY_TELEGRAM_API_BASE_URL", "https://api.telegram.org"),
             telegram_timeout_seconds=float(values.get("VISITOR_NOTIFY_TELEGRAM_TIMEOUT_SECONDS", "10")),
+            telegram_registration_help_text=values.get(
+                "VISITOR_NOTIFY_TELEGRAM_REGISTRATION_HELP_TEXT",
+                "Si necesitás el alta, escribile al administrador de recepciones de tu empresa.",
+            ),
             email_mailtrap_token=values.get("VISITOR_NOTIFY_EMAIL_MAILTRAP_TOKEN") or None,
             email_smtp_host=values.get("VISITOR_NOTIFY_EMAIL_SMTP_HOST") or None,
             email_from=values.get("VISITOR_NOTIFY_EMAIL_FROM") or None,
@@ -56,7 +71,9 @@ class BackendSettings:
 class BackendRuntime:
     settings: BackendSettings
     repository: JsonContactRepository
+    pending_registration_repository: JsonPendingTelegramRegistrationRepository
     notification_service: NotificationService
+    telegram_onboarding_service: TelegramOnboardingService
     telegram_provider: object
     email_provider: object
 
@@ -64,6 +81,9 @@ class BackendRuntime:
 def build_runtime(settings: BackendSettings | None = None) -> BackendRuntime:
     resolved_settings = settings or BackendSettings.from_env()
     repository = JsonContactRepository(resolved_settings.contacts_path)
+    pending_registration_repository = JsonPendingTelegramRegistrationRepository(
+        resolved_settings.pending_registrations_path
+    )
     telegram_provider = _build_telegram_provider(resolved_settings)
     email_provider = _build_email_provider(resolved_settings)
     notification_service = NotificationService(
@@ -72,10 +92,16 @@ def build_runtime(settings: BackendSettings | None = None) -> BackendRuntime:
         email_provider=email_provider,
         message_builder=TemplateMessageBuilder(),
     )
+    telegram_onboarding_service = TelegramOnboardingService(
+        repository=repository,
+        pending_registration_repository=pending_registration_repository,
+    )
     return BackendRuntime(
         settings=resolved_settings,
         repository=repository,
+        pending_registration_repository=pending_registration_repository,
         notification_service=notification_service,
+        telegram_onboarding_service=telegram_onboarding_service,
         telegram_provider=telegram_provider,
         email_provider=email_provider,
     )

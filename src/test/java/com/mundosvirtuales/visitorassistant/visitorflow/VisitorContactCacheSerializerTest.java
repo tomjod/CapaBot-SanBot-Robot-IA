@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class VisitorContactCacheSerializerTest {
@@ -24,6 +25,7 @@ public class VisitorContactCacheSerializerTest {
         assertEquals("ventas", restored.get(0).getId());
         assertEquals("Demo", restored.get(1).getDisplayName());
         assertTrue(restored.get(0).isTelegramAvailable());
+        assertFalse(restored.get(1).isAvailable());
     }
 
     @Test
