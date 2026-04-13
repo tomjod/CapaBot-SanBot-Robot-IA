@@ -45,4 +45,16 @@ public class VisitorLauncherState {
     public boolean isVisitorAccessEnabled() {
         return screen == Screen.AVAILABLE;
     }
+
+    public boolean isReceptionAccessEnabled() {
+        return screen == Screen.AVAILABLE;
+    }
+
+    public boolean isInformationAccessEnabled() {
+        return true;
+    }
+
+    public boolean isLegacyAccessEnabled() {
+        return true;
+    }
 }

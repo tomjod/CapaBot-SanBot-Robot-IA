@@ -24,9 +24,11 @@ public class VisitorFlowPresenter {
     private final String maintenanceMessage;
     private final String emptyMessage;
     private final String successTemplate;
+    private final String visitorNameRequiredMessage;
 
     private List<VisitorDtos.ContactSummary> contacts = Collections.emptyList();
     private VisitorDtos.ContactSummary lastSelectedContact;
+    private String lastSubmittedVisitorName;
     private VisitorFlowState currentState;
 
     public VisitorFlowPresenter(View view,
@@ -42,7 +44,8 @@ public class VisitorFlowPresenter {
                                 String loadFailedMessage,
                                 String maintenanceMessage,
                                 String emptyMessage,
-                                String successTemplate) {
+                                String successTemplate,
+                                String visitorNameRequiredMessage) {
         this.view = view;
         this.contactCatalogGateway = contactCatalogGateway;
         this.notificationDispatchGateway = notificationDispatchGateway;
@@ -57,24 +60,33 @@ public class VisitorFlowPresenter {
         this.maintenanceMessage = maintenanceMessage;
         this.emptyMessage = emptyMessage;
         this.successTemplate = successTemplate;
+        this.visitorNameRequiredMessage = visitorNameRequiredMessage;
     }
 
     public void start() {
+        VisitorFlowLogger.info("contactFlow.start", "loading contacts");
         loadContacts();
     }
 
     public void onRetry() {
+        VisitorFlowLogger.info("contactFlow.retry", "screen=" + (currentState != null ? currentState.getScreen() : null));
         if (lastSelectedContact != null && currentState != null && currentState.getScreen() == VisitorFlowState.Screen.FAILED) {
-            submitContact(lastSelectedContact);
+            submitContact(lastSelectedContact, lastSubmittedVisitorName);
             return;
         }
         loadContacts();
     }
 
-    public void onContactSelected(VisitorDtos.ContactSummary contact) {
+    public void onContactSelected(VisitorDtos.ContactSummary contact, String visitorName) {
         if (contact == null) {
+            VisitorFlowLogger.warn("contactFlow.select.ignored", "reason=contact-null");
             return;
         }
+
+        VisitorFlowLogger.info(
+                "contactFlow.select",
+                VisitorFlowLogger.summarizeContact(contact) + ", visitorName=" + (VisitorNameNormalizer.normalizeOrNull(visitorName) != null ? "provided" : "missing")
+        );
 
         if (!contact.isAvailable()) {
             currentState = VisitorFlowState.unavailable(contacts, unavailableMessage, contact.getId());
@@ -83,11 +95,20 @@ public class VisitorFlowPresenter {
             return;
         }
 
-        submitContact(contact);
+        String normalizedVisitorName = VisitorNameNormalizer.normalizeOrNull(visitorName);
+        if (normalizedVisitorName == null) {
+            currentState = VisitorFlowState.ready(contacts, visitorNameRequiredMessage, false, false);
+            view.render(currentState);
+            robotSpeechPort.speak(visitorNameRequiredMessage);
+            return;
+        }
+
+        submitContact(contact, normalizedVisitorName);
     }
 
     private void loadContacts() {
         lastSelectedContact = null;
+        lastSubmittedVisitorName = null;
         contacts = Collections.emptyList();
         currentState = VisitorFlowState.loading(loadingMessage);
         view.render(currentState);
@@ -100,6 +121,7 @@ public class VisitorFlowPresenter {
                     contactCacheStore.saveContacts(contacts);
                 }
                 String message = contacts.isEmpty() ? emptyMessage : readyMessage;
+                VisitorFlowLogger.info("contactFlow.contacts.loaded", VisitorFlowLogger.summarizeContacts(contacts));
                 currentState = VisitorFlowState.ready(contacts, message, contacts.isEmpty(), false);
                 view.render(currentState);
                 robotSpeechPort.speak(message);
@@ -107,6 +129,7 @@ public class VisitorFlowPresenter {
 
             @Override
             public void onError(String message) {
+                VisitorFlowLogger.warn("contactFlow.contacts.error", "message=" + message);
                 contacts = Collections.emptyList();
                 currentState = VisitorFlowState.maintenance(maintenanceMessage, true);
                 view.render(currentState);
@@ -115,12 +138,17 @@ public class VisitorFlowPresenter {
         });
     }
 
-    private void submitContact(final VisitorDtos.ContactSummary contact) {
+    private void submitContact(final VisitorDtos.ContactSummary contact, final String visitorName) {
+        VisitorFlowLogger.info(
+                "contactFlow.submit",
+                VisitorFlowLogger.summarizeContact(contact) + ", visitorName=" + visitorName
+        );
         lastSelectedContact = contact;
+        lastSubmittedVisitorName = visitorName;
         currentState = VisitorFlowState.submitting(contacts, contact.getDisplayName(), contact.getId());
         view.render(currentState);
 
-        notificationDispatchGateway.submitNotification(contact, new NotificationDispatchGateway.Callback() {
+        notificationDispatchGateway.submitNotification(contact, visitorName, new NotificationDispatchGateway.Callback() {
             @Override
             public void onSuccess(VisitorDtos.NotificationResult result) {
                 String status = result != null ? result.getStatus() : null;

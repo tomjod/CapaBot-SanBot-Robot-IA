@@ -27,6 +27,8 @@ public class VisitorLauncherPresenterTest {
         assertEquals(VisitorLauncherState.Screen.CHECKING, view.states.get(0).getScreen());
         assertEquals(VisitorLauncherState.Screen.AVAILABLE, view.last().getScreen());
         assertTrue(view.last().isVisitorAccessEnabled());
+        assertTrue(view.last().isReceptionAccessEnabled());
+        assertTrue(view.last().isInformationAccessEnabled());
     }
 
     @Test
@@ -46,6 +48,9 @@ public class VisitorLauncherPresenterTest {
         assertEquals(VisitorLauncherState.Screen.MAINTENANCE, view.last().getScreen());
         assertEquals("Recepción temporalmente fuera de servicio.", view.last().getMessage());
         assertFalse(view.last().isVisitorAccessEnabled());
+        assertFalse(view.last().isReceptionAccessEnabled());
+        assertTrue(view.last().isInformationAccessEnabled());
+        assertTrue(view.last().isLegacyAccessEnabled());
         assertTrue(view.last().isRetryEnabled());
     }
 

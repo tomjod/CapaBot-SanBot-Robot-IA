@@ -28,9 +28,9 @@ public class VisitorNotificationRequestDtoTest {
 
     @Test
     public void talkToPersonRequestKeepsOptionalMessageFieldsNull() {
-        VisitorDtos.NotificationRequestDto dto = new VisitorDtos.NotificationRequestDto("ventas", "robot-01", null, "  ");
+        VisitorDtos.NotificationRequestDto dto = new VisitorDtos.NotificationRequestDto("ventas", "robot-01", "  Ada  ", "  ");
 
-        assertNull(dto.visitorName);
+        assertEquals("Ada", dto.visitorName);
         assertNull(dto.location);
         assertNull(dto.reason);
         assertNull(dto.message);

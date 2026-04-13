@@ -2,10 +2,12 @@ package com.mundosvirtuales.visitorassistant.visitorflow;
 
 import android.content.Context;
 import android.content.Intent;
+import android.app.AlertDialog;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.Editable;
+import android.text.InputType;
 import android.text.TextWatcher;
 import android.view.View;
 import android.view.WindowManager;
@@ -14,6 +16,7 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.mundosvirtuales.visitorassistant.BuildConfig;
 import com.mundosvirtuales.visitorassistant.MySettings;
@@ -31,8 +34,12 @@ import static com.mundosvirtuales.visitorassistant.MyUtils.concludeSpeak;
 
 public class VisitorLeaveMessageActivity extends TopBaseActivity implements VisitorMessagePresenter.View {
 
-    public static Intent createIntent(Context context) {
-        return new Intent(context, VisitorLeaveMessageActivity.class);
+    private static final String EXTRA_VISITOR_NAME = "name";
+
+    public static Intent createIntent(Context context, String visitorName) {
+        Intent intent = new Intent(context, VisitorLeaveMessageActivity.class);
+        intent.putExtra(EXTRA_VISITOR_NAME, visitorName);
+        return intent;
     }
 
     private SpeechManager speechManager;
@@ -52,6 +59,8 @@ public class VisitorLeaveMessageActivity extends TopBaseActivity implements Visi
     private Button retryButton;
     private Button sendButton;
     private Button finishButton;
+    private VisitorMessageFlowState.Screen lastRenderedScreen;
+    private String visitorName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,13 +86,14 @@ public class VisitorLeaveMessageActivity extends TopBaseActivity implements Visi
         finishButton = findViewById(R.id.visitorMessageFinish);
 
         titleView.setText(R.string.visitor_message_title);
+        visitorName = buildVisitorName();
         adapter = new VisitorContactAdapter(this, new ArrayList<ContactListItemViewModel>());
         contactsList.setAdapter(adapter);
 
         BackendApiClient apiClient = new BackendApiClient(
                 BuildConfig.VISITOR_API_BASE_URL,
                 buildDeviceId(),
-                null,
+                visitorName,
                 buildLocation(),
                 getString(R.string.visitor_flow_configuration_error)
         );
@@ -107,6 +117,7 @@ public class VisitorLeaveMessageActivity extends TopBaseActivity implements Visi
                 getString(R.string.visitor_maintenance_message),
                 getString(R.string.visitor_message_empty_contacts),
                 getString(R.string.visitor_message_validation_contact),
+                getString(R.string.visitor_name_required),
                 getString(R.string.visitor_message_validation_text),
                 getString(R.string.visitor_message_validation_length),
                 getString(R.string.visitor_message_success)
@@ -133,7 +144,14 @@ public class VisitorLeaveMessageActivity extends TopBaseActivity implements Visi
             }
         });
         retryButton.setOnClickListener(view -> presenter.onRetry());
-        sendButton.setOnClickListener(view -> presenter.onSubmit());
+        sendButton.setOnClickListener(view -> {
+            String normalizedVisitorName = VisitorNameNormalizer.normalizeOrNull(visitorName);
+            if (normalizedVisitorName != null) {
+                presenter.onSubmit(normalizedVisitorName);
+                return;
+            }
+            promptVisitorName();
+        });
         finishButton.setOnClickListener(view -> returnToStart());
 
         new Handler().post(presenter::start);
@@ -142,6 +160,7 @@ public class VisitorLeaveMessageActivity extends TopBaseActivity implements Visi
     @Override
     public void render(VisitorMessageFlowState state) {
         runOnUiThread(() -> {
+            maybeShowSuccessToast(state);
             boolean maintenance = state.getScreen() == VisitorMessageFlowState.Screen.MAINTENANCE;
             statusView.setText(resolveMessage(state));
             statusView.setVisibility(maintenance ? View.GONE : View.VISIBLE);
@@ -165,6 +184,7 @@ public class VisitorLeaveMessageActivity extends TopBaseActivity implements Visi
             }
 
             bindContacts(state.getContacts());
+            lastRenderedScreen = state.getScreen();
         });
     }
 
@@ -177,6 +197,9 @@ public class VisitorLeaveMessageActivity extends TopBaseActivity implements Visi
         if (state.getScreen() == VisitorMessageFlowState.Screen.MAINTENANCE) {
             return "";
         }
+        if (state.getScreen() == VisitorMessageFlowState.Screen.SUCCESS) {
+            return "";
+        }
         if (state.getScreen() == VisitorMessageFlowState.Screen.SUBMITTING && state.getSelectedContactId() != null) {
             for (VisitorDtos.ContactSummary contact : state.getContacts()) {
                 if (state.getSelectedContactId().equals(contact.getId())) {
@@ -185,6 +208,15 @@ public class VisitorLeaveMessageActivity extends TopBaseActivity implements Visi
             }
         }
         return state.getMessage();
+    }
+
+    private void maybeShowSuccessToast(VisitorMessageFlowState state) {
+        if (state.getScreen() == VisitorMessageFlowState.Screen.SUCCESS
+                && lastRenderedScreen != VisitorMessageFlowState.Screen.SUCCESS
+                && state.getMessage() != null
+                && !state.getMessage().trim().isEmpty()) {
+            Toast.makeText(this, state.getMessage(), Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void bindContacts(List<VisitorDtos.ContactSummary> contacts) {
@@ -203,19 +235,11 @@ public class VisitorLeaveMessageActivity extends TopBaseActivity implements Visi
 
         List<ContactListItemViewModel> items = new ArrayList<>();
         for (VisitorDtos.ContactSummary contact : sortedContacts) {
-            items.add(new ContactListItemViewModel(contact, buildChannelsLabel(contact), buildAvailabilityLabel(contact)));
+            items.add(new ContactListItemViewModel(contact, "", buildAvailabilityLabel(contact)));
         }
         adapter.clear();
         adapter.addAll(items);
         adapter.notifyDataSetChanged();
-    }
-
-    private String buildChannelsLabel(VisitorDtos.ContactSummary contact) {
-        return getString(
-                R.string.visitor_flow_channels,
-                contact.isTelegramAvailable() ? getString(R.string.visitor_flow_available) : getString(R.string.visitor_flow_unavailable_short),
-                contact.isEmailAvailable() ? getString(R.string.visitor_flow_available) : getString(R.string.visitor_flow_unavailable_short)
-        );
     }
 
     private String buildAvailabilityLabel(VisitorDtos.ContactSummary contact) {
@@ -238,6 +262,39 @@ public class VisitorLeaveMessageActivity extends TopBaseActivity implements Visi
         }
         String normalized = BuildConfig.VISITOR_LOCATION_LABEL.trim();
         return normalized.isEmpty() ? null : normalized;
+    }
+
+    private String buildVisitorName() {
+        String rawVisitorName = getIntent() != null ? getIntent().getStringExtra(EXTRA_VISITOR_NAME) : null;
+        return VisitorNameNormalizer.normalizeOrNull(rawVisitorName);
+    }
+
+    private void promptVisitorName() {
+        final EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_WORDS);
+        input.setHint(R.string.visitor_name_input_hint);
+        input.setText(visitorName == null ? "" : visitorName);
+        input.setSelection(input.getText().length());
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.visitor_name_dialog_title)
+                .setMessage(R.string.visitor_name_dialog_message_message_flow)
+                .setView(input)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.visitor_name_dialog_continue, null)
+                .create();
+
+        dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
+            String normalizedVisitorName = VisitorNameNormalizer.normalizeOrNull(input.getText().toString());
+            if (normalizedVisitorName == null) {
+                input.setError(getString(R.string.visitor_name_required));
+                return;
+            }
+            visitorName = normalizedVisitorName;
+            dialog.dismiss();
+            presenter.onSubmit(normalizedVisitorName);
+        }));
+        dialog.show();
     }
 
     private void returnToStart() {

@@ -8,5 +8,5 @@ public interface NotificationDispatchGateway {
         void onError(String message, boolean retryable);
     }
 
-    void submitNotification(VisitorDtos.ContactSummary contact, Callback callback);
+    void submitNotification(VisitorDtos.ContactSummary contact, String visitorName, Callback callback);
 }

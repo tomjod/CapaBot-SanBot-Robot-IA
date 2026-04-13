@@ -43,7 +43,7 @@ public class VisitorMessagePresenterTest {
 
         presenter.start();
         presenter.onContactSelected(contact);
-        presenter.onSubmit();
+        presenter.onSubmit("Ada");
 
         assertEquals(VisitorMessageFlowState.Screen.READY, view.last().getScreen());
         assertFalse(gateway.submitCalled);
@@ -66,7 +66,7 @@ public class VisitorMessagePresenterTest {
         presenter.start();
         presenter.onContactSelected(contact);
         presenter.onMessageChanged("Necesito una devolución.");
-        presenter.onSubmit();
+        presenter.onSubmit("Ada");
 
         assertTrue(gateway.submitCalled);
         assertEquals("Necesito una devolución.", gateway.message);
@@ -99,6 +99,7 @@ public class VisitorMessagePresenterTest {
                 "Recepción temporalmente fuera de servicio.",
                 "Sin contactos",
                 "Seleccione contacto",
+                "Nombre requerido",
                 "Escriba mensaje",
                 "Muy largo",
                 "Listo, dejé su mensaje para %s."
@@ -128,7 +129,7 @@ public class VisitorMessagePresenterTest {
         presenter.start();
         presenter.onContactSelected(contact);
         presenter.onMessageChanged("Necesito una devolución.");
-        presenter.onSubmit();
+        presenter.onSubmit("Ada");
 
         assertEquals(VisitorMessageFlowState.Screen.MAINTENANCE, view.last().getScreen());
         assertEquals("Recepción temporalmente fuera de servicio.", view.last().getMessage());
@@ -153,10 +154,52 @@ public class VisitorMessagePresenterTest {
                 "Recepción temporalmente fuera de servicio.",
                 "No tengo contactos disponibles para mensajes en este momento.",
                 "Primero elija a quién desea dejarle el mensaje.",
+                "Por favor, indique su nombre para continuar.",
                 "Escriba un mensaje breve antes de enviarlo.",
                 "El mensaje debe tener hasta 280 caracteres.",
                 "Listo, dejé su mensaje para %s."
         );
+    }
+
+    @Test
+    public void submitWithoutVisitorNameKeepsReadyStateAndDoesNotDispatch() {
+        FakeView view = new FakeView();
+        FakeContactsGateway contactsGateway = new FakeContactsGateway();
+        VisitorDtos.ContactSummary contact = availableContact();
+        contactsGateway.contacts = Arrays.asList(contact);
+        FakeMessageGateway gateway = new FakeMessageGateway();
+        FakeSpeechPort speechPort = new FakeSpeechPort();
+
+        VisitorMessagePresenter presenter = buildPresenter(view, contactsGateway, gateway, speechPort);
+
+        presenter.start();
+        presenter.onContactSelected(contact);
+        presenter.onMessageChanged("Necesito una devolución.");
+        presenter.onSubmit(" ");
+
+        assertEquals(VisitorMessageFlowState.Screen.READY, view.last().getScreen());
+        assertFalse(gateway.submitCalled);
+        assertEquals("Por favor, indique su nombre para continuar.", view.last().getMessage());
+        assertEquals("Por favor, indique su nombre para continuar.", speechPort.messages.get(1));
+    }
+
+    @Test
+    public void successfulSubmissionPassesVisitorNameToGateway() {
+        FakeView view = new FakeView();
+        FakeContactsGateway contactsGateway = new FakeContactsGateway();
+        VisitorDtos.ContactSummary contact = availableContact();
+        contactsGateway.contacts = Arrays.asList(contact);
+        FakeMessageGateway gateway = new FakeMessageGateway();
+        gateway.result = new VisitorDtos.NotificationResult("accepted", "accepted", "skipped", false, "Listo, dejamos su mensaje para Ventas por Telegram.");
+
+        VisitorMessagePresenter presenter = buildPresenter(view, contactsGateway, gateway, new FakeSpeechPort());
+
+        presenter.start();
+        presenter.onContactSelected(contact);
+        presenter.onMessageChanged("Necesito una devolución.");
+        presenter.onSubmit("  Ada Lovelace ");
+
+        assertEquals("Ada Lovelace", gateway.visitorName);
     }
 
     private VisitorDtos.ContactSummary availableContact() {
@@ -208,13 +251,15 @@ public class VisitorMessagePresenterTest {
     private static class FakeMessageGateway implements MessageDispatchGateway {
         private VisitorDtos.NotificationResult result;
         private boolean submitCalled;
+        private String visitorName;
         private String message;
         private String errorMessage;
         private boolean retryableError;
 
         @Override
-        public void submitMessageNotification(VisitorDtos.ContactSummary contact, String message, NotificationDispatchGateway.Callback callback) {
+        public void submitMessageNotification(VisitorDtos.ContactSummary contact, String visitorName, String message, NotificationDispatchGateway.Callback callback) {
             this.submitCalled = true;
+            this.visitorName = visitorName;
             this.message = message;
             if (errorMessage != null) {
                 callback.onError(errorMessage, retryableError);

@@ -44,7 +44,7 @@ public class VisitorFlowPresenterTest {
         VisitorFlowPresenter presenter = buildPresenter(view, contactsGateway, notificationGateway, speechPort);
 
         presenter.start();
-        presenter.onContactSelected(contact);
+        presenter.onContactSelected(contact, "Ada");
 
         assertEquals(VisitorFlowState.Screen.SUBMITTING, view.states.get(2).getScreen());
         assertEquals(VisitorFlowState.Screen.SUCCESS, view.last().getScreen());
@@ -82,7 +82,7 @@ public class VisitorFlowPresenterTest {
         VisitorFlowPresenter presenter = buildPresenter(view, contactsGateway, notificationGateway, speechPort);
 
         presenter.start();
-        presenter.onContactSelected(contact);
+        presenter.onContactSelected(contact, "Ada");
 
         assertEquals(VisitorFlowState.Screen.UNAVAILABLE, view.last().getScreen());
         assertFalse(notificationGateway.submitCalled);
@@ -103,7 +103,7 @@ public class VisitorFlowPresenterTest {
         VisitorFlowPresenter presenter = buildPresenter(view, contactsGateway, notificationGateway, speechPort);
 
         presenter.start();
-        presenter.onContactSelected(contact);
+        presenter.onContactSelected(contact, "Ada");
         presenter.onRetry();
 
         assertTrue(notificationGateway.submitCalled);
@@ -220,7 +220,7 @@ public class VisitorFlowPresenterTest {
         VisitorFlowPresenter presenter = buildPresenter(view, contactsGateway, notificationGateway, speechPort);
 
         presenter.start();
-        presenter.onContactSelected(contact);
+        presenter.onContactSelected(contact, "Ada");
 
         assertEquals(VisitorFlowState.Screen.MAINTENANCE, view.last().getScreen());
         assertEquals("Recepción temporalmente fuera de servicio.", view.last().getMessage());
@@ -252,8 +252,47 @@ public class VisitorFlowPresenterTest {
                 "No pude mostrar los contactos en este momento. Inténtelo nuevamente.",
                 "Recepción temporalmente fuera de servicio.",
                 "No tengo contactos disponibles en este momento. Puede intentarlo nuevamente en unos segundos.",
-                "Listo, ya avisé a %1$s."
+                "Listo, ya avisé a %1$s.",
+                "Por favor, indique su nombre para continuar."
         );
+    }
+
+    @Test
+    public void selectingAvailableContactRequiresVisitorNameBeforeSubmitting() {
+        FakeView view = new FakeView();
+        FakeContactsGateway contactsGateway = new FakeContactsGateway();
+        VisitorDtos.ContactSummary contact = availableContact();
+        contactsGateway.contacts = Arrays.asList(contact);
+        FakeNotificationGateway notificationGateway = new FakeNotificationGateway();
+        FakeSpeechPort speechPort = new FakeSpeechPort();
+
+        VisitorFlowPresenter presenter = buildPresenter(view, contactsGateway, notificationGateway, speechPort);
+
+        presenter.start();
+        presenter.onContactSelected(contact, "  ");
+
+        assertEquals(VisitorFlowState.Screen.READY, view.last().getScreen());
+        assertFalse(notificationGateway.submitCalled);
+        assertEquals("Por favor, indique su nombre para continuar.", view.last().getMessage());
+        assertEquals("Por favor, indique su nombre para continuar.", speechPort.messages.get(1));
+    }
+
+    @Test
+    public void selectingAvailableContactPassesVisitorNameToGateway() {
+        FakeView view = new FakeView();
+        FakeContactsGateway contactsGateway = new FakeContactsGateway();
+        VisitorDtos.ContactSummary contact = availableContact();
+        contactsGateway.contacts = Arrays.asList(contact);
+        FakeNotificationGateway notificationGateway = new FakeNotificationGateway();
+        notificationGateway.result = new VisitorDtos.NotificationResult("accepted", "accepted", "skipped", false, "Listo, avisamos a Ventas por Telegram.");
+        FakeSpeechPort speechPort = new FakeSpeechPort();
+
+        VisitorFlowPresenter presenter = buildPresenter(view, contactsGateway, notificationGateway, speechPort);
+
+        presenter.start();
+        presenter.onContactSelected(contact, "  Ada Lovelace  ");
+
+        assertEquals("Ada Lovelace", notificationGateway.visitorName);
     }
 
     private VisitorDtos.ContactSummary availableContact() {
@@ -314,13 +353,15 @@ public class VisitorFlowPresenterTest {
         private VisitorDtos.NotificationResult result;
         private boolean submitCalled;
         private int submitCount;
+        private String visitorName;
         private String errorMessage;
         private boolean retryableError;
 
         @Override
-        public void submitNotification(VisitorDtos.ContactSummary contact, Callback callback) {
+        public void submitNotification(VisitorDtos.ContactSummary contact, String visitorName, Callback callback) {
             submitCalled = true;
             submitCount++;
+            this.visitorName = visitorName;
             if (errorMessage != null) {
                 callback.onError(errorMessage, retryableError);
                 return;
