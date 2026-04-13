@@ -29,7 +29,7 @@ public class BackendApiClient implements ContactCatalogGateway, NotificationDisp
 
     private final VisitorBackendService service;
     private final String deviceId;
-    private final String visitorName;
+    private final String defaultVisitorName;
     private final String location;
     private final String configurationErrorMessage;
 
@@ -39,7 +39,7 @@ public class BackendApiClient implements ContactCatalogGateway, NotificationDisp
                             String location,
                             String configurationErrorMessage) {
         this.deviceId = deviceId;
-        this.visitorName = visitorName;
+        this.defaultVisitorName = VisitorNameNormalizer.normalizeOrNull(visitorName);
         this.location = location;
         this.configurationErrorMessage = configurationErrorMessage;
         this.service = createService(baseUrl);
@@ -52,7 +52,7 @@ public class BackendApiClient implements ContactCatalogGateway, NotificationDisp
                      String configurationErrorMessage) {
         this.service = service;
         this.deviceId = deviceId;
-        this.visitorName = visitorName;
+        this.defaultVisitorName = VisitorNameNormalizer.normalizeOrNull(visitorName);
         this.location = location;
         this.configurationErrorMessage = configurationErrorMessage;
     }
@@ -87,16 +87,29 @@ public class BackendApiClient implements ContactCatalogGateway, NotificationDisp
     }
 
     @Override
-    public void submitNotification(final VisitorDtos.ContactSummary contact, final NotificationDispatchGateway.Callback callback) {
-        submitNotificationRequest(new VisitorDtos.NotificationRequestDto(contact.getId(), deviceId, visitorName, location), callback);
+    public void submitNotification(final VisitorDtos.ContactSummary contact,
+                                   final String visitorName,
+                                   final NotificationDispatchGateway.Callback callback) {
+        submitNotificationRequest(
+                new VisitorDtos.NotificationRequestDto(contact.getId(), deviceId, resolveVisitorName(visitorName), location),
+                callback
+        );
     }
 
     @Override
-    public void submitMessageNotification(VisitorDtos.ContactSummary contact, String message, NotificationDispatchGateway.Callback callback) {
+    public void submitMessageNotification(VisitorDtos.ContactSummary contact,
+                                          String visitorName,
+                                          String message,
+                                          NotificationDispatchGateway.Callback callback) {
         submitNotificationRequest(
-                new VisitorDtos.NotificationRequestDto(contact.getId(), deviceId, visitorName, location, "leave_message", message),
+                new VisitorDtos.NotificationRequestDto(contact.getId(), deviceId, resolveVisitorName(visitorName), location, "leave_message", message),
                 callback
         );
+    }
+
+    private String resolveVisitorName(String visitorName) {
+        String normalized = VisitorNameNormalizer.normalizeOrNull(visitorName);
+        return normalized != null ? normalized : defaultVisitorName;
     }
 
     private void submitNotificationRequest(VisitorDtos.NotificationRequestDto request,

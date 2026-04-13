@@ -79,9 +79,13 @@ class NotificationServiceTest(unittest.TestCase):
 
         self.assertEqual(outcome.status, "accepted")
         sent_message = telegram_provider.sent_messages[0][2]
-        self.assertIn("Ada solicita comunicarse con Ventas", sent_message)
-        self.assertIn("sanbot-01", sent_message)
-        self.assertIn("2026-04-09T18:00:00+00:00", sent_message)
+        self.assertIn("🔔 Solicitud para hablar con una persona", sent_message)
+        self.assertIn("Para: Ventas", sent_message)
+        self.assertIn("Visitante: Ada", sent_message)
+        self.assertIn("Ubicación: Recepción", sent_message)
+        self.assertIn("Dispositivo: sanbot-01", sent_message)
+        self.assertIn("Hora: 09 abr 2026, 14:00 (Chile)", sent_message)
+        self.assertIn("Acción sugerida: Acercarse a recepción o responder a la visita.", sent_message)
 
     def test_leave_message_flow_includes_reason_and_visitor_message_in_dispatched_text(self) -> None:
         repository = InMemoryContactRepository(
@@ -108,9 +112,14 @@ class NotificationServiceTest(unittest.TestCase):
 
         self.assertEqual(outcome.status, "accepted")
         sent_message = telegram_provider.sent_messages[0][2]
-        self.assertIn("Ada dejó un mensaje para Ventas en Recepción", sent_message)
+        self.assertIn("📝 Nuevo mensaje de visita", sent_message)
+        self.assertIn("Para: Ventas", sent_message)
+        self.assertIn("Visitante: Ada", sent_message)
+        self.assertIn("Ubicación: Recepción", sent_message)
         self.assertIn("Mensaje: Necesito que me contacten mañana.", sent_message)
-        self.assertIn("sanbot-01", sent_message)
+        self.assertIn("Dispositivo: sanbot-01", sent_message)
+        self.assertIn("Hora: 09 abr 2026, 14:00 (Chile)", sent_message)
+        self.assertIn("Acción sugerida: Responder a la visita cuando le sea posible.", sent_message)
 
     def test_marks_request_retryable_when_all_attempted_channels_fail(self) -> None:
         repository = InMemoryContactRepository(

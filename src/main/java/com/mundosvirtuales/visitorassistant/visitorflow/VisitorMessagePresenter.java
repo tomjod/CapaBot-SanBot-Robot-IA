@@ -26,6 +26,7 @@ public class VisitorMessagePresenter {
     private final String maintenanceMessage;
     private final String emptyContactsMessage;
     private final String validationContactMessage;
+    private final String validationVisitorNameMessage;
     private final String validationTextMessage;
     private final String validationLengthMessage;
     private final String successTemplate;
@@ -33,6 +34,7 @@ public class VisitorMessagePresenter {
     private List<VisitorDtos.ContactSummary> contacts = Collections.emptyList();
     private VisitorDtos.ContactSummary selectedContact;
     private String draftMessage = "";
+    private String lastSubmittedVisitorName;
     private VisitorMessageFlowState currentState;
 
     public VisitorMessagePresenter(View view,
@@ -49,9 +51,10 @@ public class VisitorMessagePresenter {
                                     String maintenanceMessage,
                                     String emptyContactsMessage,
                                     String validationContactMessage,
+                                    String validationVisitorNameMessage,
                                     String validationTextMessage,
-                                   String validationLengthMessage,
-                                   String successTemplate) {
+                                    String validationLengthMessage,
+                                    String successTemplate) {
         this.view = view;
         this.contactCatalogGateway = contactCatalogGateway;
         this.messageDispatchGateway = messageDispatchGateway;
@@ -66,6 +69,7 @@ public class VisitorMessagePresenter {
         this.maintenanceMessage = maintenanceMessage;
         this.emptyContactsMessage = emptyContactsMessage;
         this.validationContactMessage = validationContactMessage;
+        this.validationVisitorNameMessage = validationVisitorNameMessage;
         this.validationTextMessage = validationTextMessage;
         this.validationLengthMessage = validationLengthMessage;
         this.successTemplate = successTemplate;
@@ -103,7 +107,7 @@ public class VisitorMessagePresenter {
         renderReady(currentMessage, currentState != null && currentState.isRetryEnabled(), currentState != null && currentState.isShowingCachedContacts());
     }
 
-    public void onSubmit() {
+    public void onSubmit(String visitorName) {
         if (selectedContact == null) {
             renderReady(validationContactMessage, false, false);
             robotSpeechPort.speak(validationContactMessage);
@@ -117,6 +121,13 @@ public class VisitorMessagePresenter {
             return;
         }
 
+        String normalizedVisitorName = VisitorNameNormalizer.normalizeOrNull(visitorName);
+        if (normalizedVisitorName == null) {
+            renderReady(validationVisitorNameMessage, false, false);
+            robotSpeechPort.speak(validationVisitorNameMessage);
+            return;
+        }
+
         String validationError = validateDraft(draftMessage);
         if (validationError != null) {
             renderReady(validationError, false, false);
@@ -124,12 +135,12 @@ public class VisitorMessagePresenter {
             return;
         }
 
-        submitMessage(selectedContact, draftMessage.trim());
+        submitMessage(selectedContact, normalizedVisitorName, draftMessage.trim());
     }
 
     public void onRetry() {
         if (selectedContact != null && currentState != null && currentState.getScreen() == VisitorMessageFlowState.Screen.FAILED && isDraftValid(draftMessage)) {
-            submitMessage(selectedContact, draftMessage.trim());
+            submitMessage(selectedContact, lastSubmittedVisitorName, draftMessage.trim());
             return;
         }
         loadContacts();
@@ -137,6 +148,7 @@ public class VisitorMessagePresenter {
 
     private void loadContacts() {
         selectedContact = null;
+        lastSubmittedVisitorName = null;
         contacts = Collections.emptyList();
         currentState = VisitorMessageFlowState.loading(
                 Collections.<VisitorDtos.ContactSummary>emptyList(),
@@ -170,7 +182,10 @@ public class VisitorMessagePresenter {
         });
     }
 
-    private void submitMessage(final VisitorDtos.ContactSummary contact, final String normalizedMessage) {
+    private void submitMessage(final VisitorDtos.ContactSummary contact,
+                               final String visitorName,
+                               final String normalizedMessage) {
+        lastSubmittedVisitorName = visitorName;
         currentState = VisitorMessageFlowState.submitting(
                 contacts,
                 String.format("Enviando mensaje a %s…", contact.getDisplayName()),
@@ -179,7 +194,7 @@ public class VisitorMessagePresenter {
         );
         view.render(currentState);
 
-        messageDispatchGateway.submitMessageNotification(contact, normalizedMessage, new NotificationDispatchGateway.Callback() {
+        messageDispatchGateway.submitMessageNotification(contact, visitorName, normalizedMessage, new NotificationDispatchGateway.Callback() {
             @Override
             public void onSuccess(VisitorDtos.NotificationResult result) {
                 String status = result != null ? result.getStatus() : null;

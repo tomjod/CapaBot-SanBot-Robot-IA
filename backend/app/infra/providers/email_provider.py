@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import smtplib
 from email.message import EmailMessage
-from typing import Callable, Protocol
+from typing import Callable, Mapping, Protocol
+
+from mailtrap import Address, Mail, MailtrapClient
 
 from backend.app.domain.contact import Contact
 from backend.app.domain.notification import NotificationRequest
@@ -18,10 +20,59 @@ class SupportsSmtpClient(Protocol):
 
 
 ClientFactory = Callable[[str, int, float], SupportsSmtpClient]
+MailtrapClientFactory = Callable[[str], "SupportsMailtrapClient"]
 
 
 def _default_client_factory(host: str, port: int, timeout: float) -> SupportsSmtpClient:
     return smtplib.SMTP(host=host, port=port, timeout=timeout)
+
+
+class SupportsMailtrapClient(Protocol):
+    def send(self, mail: Mail) -> Mapping[str, object]:
+        ...
+
+
+def _default_mailtrap_client_factory(token: str) -> SupportsMailtrapClient:
+    return MailtrapClient(token=token)
+
+
+class MailtrapEmailProvider:
+    def __init__(
+        self,
+        token: str,
+        from_address: str,
+        from_name: str | None = None,
+        client_factory: MailtrapClientFactory | None = None,
+    ) -> None:
+        self._token = token.strip()
+        self._from_address = from_address.strip()
+        self._from_name = from_name.strip() if from_name and from_name.strip() else None
+        self._client_factory = client_factory or _default_mailtrap_client_factory
+
+    def send(self, contact: Contact, message: str, request: NotificationRequest) -> ChannelDelivery:
+        if not contact.email:
+            return ChannelDelivery(status="unavailable")
+
+        sender = Address(email=self._from_address, name=self._from_name)
+        email = Mail(
+            sender=sender,
+            to=[Address(email=contact.email, name=contact.display_name)],
+            subject="Notificación de visita",
+            text=message,
+        )
+
+        try:
+            response = self._client_factory(self._token).send(email)
+        except TimeoutError:
+            raise
+        except Exception as exc:
+            return ChannelDelivery(status="failed", detail=str(exc))
+
+        if response.get("success") is False:
+            detail = response.get("errors")
+            return ChannelDelivery(status="failed", detail=str(detail) if detail else None)
+
+        return ChannelDelivery(status="sent")
 
 
 class SmtpEmailProvider:

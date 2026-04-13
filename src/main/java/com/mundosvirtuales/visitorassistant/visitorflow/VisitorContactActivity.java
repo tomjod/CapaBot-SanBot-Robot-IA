@@ -2,15 +2,19 @@ package com.mundosvirtuales.visitorassistant.visitorflow;
 
 import android.content.Context;
 import android.content.Intent;
+import android.app.AlertDialog;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.text.InputType;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.mundosvirtuales.visitorassistant.BuildConfig;
 import com.mundosvirtuales.visitorassistant.MySettings;
@@ -50,6 +54,8 @@ public class VisitorContactActivity extends TopBaseActivity implements VisitorFl
     private Handler mainHandler;
     private ExecutorService contactBindingExecutor;
     private int contactBindingGeneration;
+    private VisitorFlowState.Screen lastRenderedScreen;
+    private String visitorName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,13 +81,14 @@ public class VisitorContactActivity extends TopBaseActivity implements VisitorFl
         finishButton = findViewById(R.id.visitorFinish);
 
         titleView.setText(R.string.visitor_flow_title);
+        visitorName = buildVisitorName();
         adapter = new VisitorContactAdapter(this, new ArrayList<ContactListItemViewModel>());
         contactsList.setAdapter(adapter);
 
         BackendApiClient apiClient = new BackendApiClient(
                 BuildConfig.VISITOR_API_BASE_URL,
                 buildDeviceId(),
-                buildVisitorName(),
+                visitorName,
                 buildLocation(),
                 getString(R.string.visitor_flow_configuration_error)
         );
@@ -99,13 +106,19 @@ public class VisitorContactActivity extends TopBaseActivity implements VisitorFl
                 getString(R.string.visitor_flow_load_failed),
                 getString(R.string.visitor_maintenance_message),
                 getString(R.string.visitor_flow_empty_contacts),
-                getString(R.string.visitor_flow_success)
+                getString(R.string.visitor_flow_success),
+                getString(R.string.visitor_name_required)
         );
 
         contactsList.setOnItemClickListener((parent, view, position, id) -> {
             ContactListItemViewModel item = adapter.getItem(position);
             if (item != null) {
-                presenter.onContactSelected(item.getContact());
+                String normalizedVisitorName = VisitorNameNormalizer.normalizeOrNull(visitorName);
+                if (normalizedVisitorName != null) {
+                    presenter.onContactSelected(item.getContact(), normalizedVisitorName);
+                    return;
+                }
+                promptVisitorName(item.getContact(), false);
             }
         });
 
@@ -129,6 +142,7 @@ public class VisitorContactActivity extends TopBaseActivity implements VisitorFl
     @Override
     public void render(VisitorFlowState state) {
         runOnUiThread(() -> {
+            maybeShowSuccessToast(state);
             String statusMessage = resolveMessage(state);
             boolean maintenance = state.getScreen() == VisitorFlowState.Screen.MAINTENANCE;
             statusView.setText(statusMessage);
@@ -149,6 +163,7 @@ public class VisitorContactActivity extends TopBaseActivity implements VisitorFl
 
             bindContacts(state.getContacts());
             contactsList.setEnabled(state.getScreen() == VisitorFlowState.Screen.READY);
+            lastRenderedScreen = state.getScreen();
         });
     }
 
@@ -159,6 +174,9 @@ public class VisitorContactActivity extends TopBaseActivity implements VisitorFl
 
     private String resolveMessage(VisitorFlowState state) {
         if (state.getScreen() == VisitorFlowState.Screen.LOADING && !state.isShowingCachedContacts()) {
+            return "";
+        }
+        if (state.getScreen() == VisitorFlowState.Screen.SUCCESS) {
             return "";
         }
         if (state.getScreen() == VisitorFlowState.Screen.SUBMITTING && state.getSelectedContactId() != null) {
@@ -175,6 +193,15 @@ public class VisitorContactActivity extends TopBaseActivity implements VisitorFl
             return "";
         }
         return state.getMessage();
+    }
+
+    private void maybeShowSuccessToast(VisitorFlowState state) {
+        if (state.getScreen() == VisitorFlowState.Screen.SUCCESS
+                && lastRenderedScreen != VisitorFlowState.Screen.SUCCESS
+                && state.getMessage() != null
+                && !state.getMessage().trim().isEmpty()) {
+            Toast.makeText(this, state.getMessage(), Toast.LENGTH_SHORT).show();
+        }
     }
 
     private String resolveCacheHint(VisitorFlowState state) {
@@ -197,7 +224,7 @@ public class VisitorContactActivity extends TopBaseActivity implements VisitorFl
             List<VisitorDtos.ContactSummary> sortedContacts = VisitorContactOrdering.sort(contactsSnapshot);
             List<ContactListItemViewModel> items = new ArrayList<>();
             for (VisitorDtos.ContactSummary contact : sortedContacts) {
-                items.add(new ContactListItemViewModel(contact, buildChannelsLabel(contact), buildAvailabilityLabel(contact)));
+                items.add(new ContactListItemViewModel(contact, "", buildAvailabilityLabel(contact)));
             }
             mainHandler.post(() -> {
                 if (generation != contactBindingGeneration || isFinishing()) {
@@ -219,14 +246,6 @@ public class VisitorContactActivity extends TopBaseActivity implements VisitorFl
                 speechManager.startSpeak(message, MySettings.getSpeakDefaultOption());
             }
         });
-    }
-
-    private String buildChannelsLabel(VisitorDtos.ContactSummary contact) {
-        return getString(
-                R.string.visitor_flow_channels,
-                contact.isTelegramAvailable() ? getString(R.string.visitor_flow_available) : getString(R.string.visitor_flow_unavailable_short),
-                contact.isEmailAvailable() ? getString(R.string.visitor_flow_available) : getString(R.string.visitor_flow_unavailable_short)
-        );
     }
 
     private String buildAvailabilityLabel(VisitorDtos.ContactSummary contact) {
@@ -258,6 +277,34 @@ public class VisitorContactActivity extends TopBaseActivity implements VisitorFl
         }
         String normalized = BuildConfig.VISITOR_LOCATION_LABEL.trim();
         return normalized.isEmpty() ? null : normalized;
+    }
+
+    private void promptVisitorName(VisitorDtos.ContactSummary contact, boolean retrySubmission) {
+        final EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_WORDS);
+        input.setHint(R.string.visitor_name_input_hint);
+        input.setText(visitorName == null ? "" : visitorName);
+        input.setSelection(input.getText().length());
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.visitor_name_dialog_title)
+                .setMessage(retrySubmission ? R.string.visitor_name_dialog_message_retry : R.string.visitor_name_dialog_message)
+                .setView(input)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.visitor_name_dialog_continue, null)
+                .create();
+
+        dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
+            String normalizedVisitorName = VisitorNameNormalizer.normalizeOrNull(input.getText().toString());
+            if (normalizedVisitorName == null) {
+                input.setError(getString(R.string.visitor_name_required));
+                return;
+            }
+            visitorName = normalizedVisitorName;
+            dialog.dismiss();
+            presenter.onContactSelected(contact, normalizedVisitorName);
+        }));
+        dialog.show();
     }
 
     private void returnToBase() {

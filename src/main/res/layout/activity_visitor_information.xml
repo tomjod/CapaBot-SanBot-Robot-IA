@@ -16,13 +16,30 @@
             android:layout_width="@dimen/visitor_content_width"
             android:layout_height="wrap_content"
             android:background="@drawable/visitor_panel_background"
+            android:gravity="center_horizontal"
             android:orientation="vertical"
             android:padding="@dimen/visitor_panel_padding">
+
+            <ImageView
+                android:layout_width="220dp"
+                android:layout_height="72dp"
+                android:adjustViewBounds="true"
+                android:contentDescription="@string/visitor_information_logo_content_description"
+                android:scaleType="centerInside"
+                android:src="@drawable/busso_group_logo" />
+
+            <TextView
+                style="@style/VisitorBadgeText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/visitor_spacing_md"
+                android:text="@string/visitor_information_company_badge" />
 
             <TextView
                 style="@style/VisitorTitleText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/visitor_spacing_md"
                 android:gravity="center"
                 android:text="@string/visitor_information_title" />
 
@@ -33,14 +50,23 @@
                 android:layout_marginTop="@dimen/visitor_spacing_md"
                 android:gravity="center"
                 android:text="@string/visitor_information_subtitle" />
-        </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/visitorInformationOptions"
-            android:layout_width="@dimen/visitor_content_width"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/visitor_spacing_md"
-            android:orientation="vertical" />
+            <TextView
+                style="@style/VisitorBodyText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/visitor_spacing_md"
+                android:gravity="center"
+                android:text="@string/visitor_information_company_summary" />
+
+            <TextView
+                style="@style/VisitorContactMetaText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/visitor_spacing_md"
+                android:gravity="center"
+                android:text="@string/visitor_information_companies_hint" />
+        </LinearLayout>
 
         <LinearLayout
             android:layout_width="@dimen/visitor_content_width"
@@ -51,10 +77,142 @@
             android:padding="@dimen/visitor_panel_padding">
 
             <TextView
+                style="@style/VisitorContactTitleText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/visitor_information_key_facts_title" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/visitor_spacing_md"
+                android:background="@drawable/visitor_contact_item_background"
+                android:orientation="vertical"
+                android:padding="@dimen/visitor_panel_padding">
+
+                <TextView
+                    style="@style/VisitorContactTitleText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/visitor_information_purpose_title" />
+
+                <TextView
+                    style="@style/VisitorContactMetaText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/visitor_spacing_sm"
+                    android:text="@string/visitor_information_purpose_summary" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/visitor_spacing_md"
+                android:background="@drawable/visitor_contact_item_background"
+                android:orientation="vertical"
+                android:padding="@dimen/visitor_panel_padding">
+
+                <TextView
+                    style="@style/VisitorContactTitleText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/visitor_information_values_title" />
+
+                <TextView
+                    style="@style/VisitorContactMetaText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/visitor_spacing_sm"
+                    android:text="@string/visitor_information_values_summary" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/visitor_spacing_md"
+                android:background="@drawable/visitor_contact_item_background"
+                android:orientation="vertical"
+                android:padding="@dimen/visitor_panel_padding">
+
+                <TextView
+                    style="@style/VisitorContactTitleText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/visitor_information_contact_title" />
+
+                <TextView
+                    style="@style/VisitorContactMetaText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/visitor_spacing_sm"
+                    android:text="@string/visitor_information_contact_summary" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="@dimen/visitor_content_width"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/visitor_spacing_md"
+            android:background="@drawable/visitor_panel_background"
+            android:orientation="vertical"
+            android:padding="@dimen/visitor_panel_padding">
+
+            <TextView
+                style="@style/VisitorContactTitleText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/visitor_information_companies_title" />
+
+            <LinearLayout
+                android:id="@+id/visitorInformationOptions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/visitor_spacing_md"
+                android:orientation="vertical" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="@dimen/visitor_content_width"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/visitor_spacing_md"
+            android:background="@drawable/visitor_panel_background"
+            android:orientation="vertical"
+            android:padding="@dimen/visitor_panel_padding">
+
+            <TextView
+                style="@style/VisitorContactTitleText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/visitor_information_detail_title" />
+
+            <ImageView
+                android:id="@+id/visitorInformationDetailLogo"
+                android:layout_width="220dp"
+                android:layout_height="72dp"
+                android:layout_marginTop="@dimen/visitor_spacing_md"
+                android:adjustViewBounds="true"
+                android:scaleType="centerInside" />
+
+            <TextView
+                android:id="@+id/visitorInformationDetailTitle"
+                style="@style/VisitorContactTitleText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/visitor_spacing_md" />
+
+            <TextView
+                android:id="@+id/visitorInformationDetailSummary"
+                style="@style/VisitorContactMetaText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/visitor_spacing_sm" />
+
+            <TextView
                 android:id="@+id/visitorInformationDetail"
                 style="@style/VisitorBodyText"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/visitor_spacing_sm" />
         </LinearLayout>
 
         <LinearLayout

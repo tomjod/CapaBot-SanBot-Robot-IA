@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/visitor_spacing_md"
+    android:background="@drawable/visitor_information_option_background"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center_vertical"
+    android:minHeight="96dp"
+    android:orientation="horizontal"
+    android:padding="@dimen/visitor_panel_padding">
+
+    <ImageView
+        android:id="@+id/visitorInformationOptionLogo"
+        android:layout_width="120dp"
+        android:layout_height="52dp"
+        android:adjustViewBounds="true"
+        android:scaleType="centerInside" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/visitor_spacing_md"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/visitorInformationOptionTitle"
+            style="@style/VisitorContactTitleText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/visitorInformationOptionSummary"
+            style="@style/VisitorContactMetaText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/visitor_spacing_sm" />
+    </LinearLayout>
+
+</LinearLayout>

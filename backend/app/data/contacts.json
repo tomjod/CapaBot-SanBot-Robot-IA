@@ -7,11 +7,11 @@
     "email_enabled": true
   },
   {
-    "id": "reception-soporte",
-    "display_name": "Soporte",
-    "telegram_chat_id": "-100100200301",
-    "email": null,
-    "email_enabled": false
+    "id": "reception-Desarrollo",
+    "display_name": "Alexis Ocando",
+    "telegram_chat_id": "919408492",
+    "email": "aocando@mundos-virtuales.com",
+    "email_enabled": true
   },
   {
     "id": "reception-demo",

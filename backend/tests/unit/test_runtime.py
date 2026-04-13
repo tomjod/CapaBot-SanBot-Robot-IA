@@ -4,7 +4,7 @@ import os
 import unittest
 
 from backend.app.runtime import BackendSettings, build_runtime
-from backend.app.infra.providers.email_provider import SmtpEmailProvider, StubEmailProvider
+from backend.app.infra.providers.email_provider import MailtrapEmailProvider, SmtpEmailProvider, StubEmailProvider
 from backend.app.infra.providers.telegram_provider import StubTelegramProvider, TelegramBotProvider
 
 
@@ -21,18 +21,33 @@ class RuntimeWiringTest(unittest.TestCase):
             "VISITOR_NOTIFY_TELEGRAM_BOT_TOKEN": "token-123",
             "VISITOR_NOTIFY_TELEGRAM_API_BASE_URL": "https://telegram.internal",
             "VISITOR_NOTIFY_TELEGRAM_TIMEOUT_SECONDS": "15",
-            "VISITOR_NOTIFY_EMAIL_SMTP_HOST": "smtp.example.com",
+            "VISITOR_NOTIFY_EMAIL_MAILTRAP_TOKEN": "mailtrap-token",
             "VISITOR_NOTIFY_EMAIL_FROM": "robot@example.com",
+            "VISITOR_NOTIFY_EMAIL_FROM_NAME": "CapaBot",
             "VISITOR_NOTIFY_EMAIL_TIMEOUT_SECONDS": "7.5",
         }
 
         runtime = build_runtime(BackendSettings.from_env(env))
 
         self.assertIsInstance(runtime.telegram_provider, TelegramBotProvider)
-        self.assertIsInstance(runtime.email_provider, SmtpEmailProvider)
+        self.assertIsInstance(runtime.email_provider, MailtrapEmailProvider)
         self.assertEqual(runtime.settings.telegram_api_base_url, "https://telegram.internal")
         self.assertEqual(runtime.settings.telegram_timeout_seconds, 15.0)
+        self.assertEqual(runtime.settings.email_mailtrap_token, "mailtrap-token")
+        self.assertEqual(runtime.settings.email_from_name, "CapaBot")
         self.assertEqual(runtime.settings.email_timeout_seconds, 7.5)
+
+    def test_keeps_legacy_smtp_runtime_path_available(self) -> None:
+        env = {
+            "VISITOR_NOTIFY_EMAIL_SMTP_HOST": "smtp.example.com",
+            "VISITOR_NOTIFY_EMAIL_FROM": "robot@example.com",
+            "VISITOR_NOTIFY_EMAIL_SMTP_PORT": "2525",
+        }
+
+        runtime = build_runtime(BackendSettings.from_env(env))
+
+        self.assertIsInstance(runtime.email_provider, SmtpEmailProvider)
+        self.assertEqual(runtime.settings.email_smtp_port, 2525)
 
     def test_reads_boolean_flags_from_environment(self) -> None:
         settings = BackendSettings.from_env({"VISITOR_NOTIFY_ALLOW_STUB_DELIVERY": "false"})

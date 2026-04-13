@@ -6,6 +6,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
+import android.text.TextUtils;
 
 import com.mundosvirtuales.visitorassistant.R;
 
@@ -49,7 +50,13 @@ public class VisitorContactAdapter extends ArrayAdapter<ContactListItemViewModel
             availability.setTextColor(getContext().getResources().getColor(item.isEnabled()
                     ? R.color.visitorBadgeReadyText
                     : R.color.visitorBadgeMutedText));
-            channels.setText(item.getChannelsLabel());
+            String channelsLabel = item.getChannelsLabel();
+            if (TextUtils.isEmpty(channelsLabel)) {
+                channels.setVisibility(View.GONE);
+            } else {
+                channels.setVisibility(View.VISIBLE);
+                channels.setText(channelsLabel);
+            }
             view.setEnabled(item.isEnabled());
             view.setAlpha(item.isEnabled() ? 1f : 0.72f);
         }

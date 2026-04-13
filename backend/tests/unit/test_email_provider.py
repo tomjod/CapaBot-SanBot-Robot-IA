@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 from backend.app.domain.contact import Contact
 from backend.app.domain.notification import NotificationRequest
-from backend.app.infra.providers.email_provider import SmtpEmailProvider, StubEmailProvider
+from backend.app.infra.providers.email_provider import MailtrapEmailProvider, SmtpEmailProvider, StubEmailProvider
 
 
 class RecordingSmtpClient:
@@ -18,6 +18,18 @@ class RecordingSmtpClient:
 
     def quit(self) -> None:
         self.closed = True
+
+
+class RecordingMailtrapClient:
+    def __init__(self, success: bool = True) -> None:
+        self.success = success
+        self.sent_messages = []
+
+    def send(self, mail) -> dict[str, object]:
+        self.sent_messages.append(mail)
+        if self.success:
+            return {"success": True, "message_ids": ["msg-1"]}
+        return {"success": False, "errors": ["mailtrap rejected payload"]}
 
 
 class EmailProviderTest(unittest.TestCase):
@@ -36,6 +48,38 @@ class EmailProviderTest(unittest.TestCase):
             device_id="sanbot-01",
             requested_at=datetime(2026, 4, 9, 18, 0, tzinfo=timezone.utc),
         )
+
+    def test_sends_email_with_injected_mailtrap_client(self) -> None:
+        client = RecordingMailtrapClient()
+        provider = MailtrapEmailProvider(
+            token="mailtrap-token",
+            from_address="robot@example.com",
+            from_name="CapaBot",
+            client_factory=lambda token: client,
+        )
+
+        outcome = provider.send(self._contact(), "hola", self._request())
+
+        self.assertEqual(outcome.status, "sent")
+        sent_mail = client.sent_messages[0]
+        self.assertEqual(sent_mail.sender.email, "robot@example.com")
+        self.assertEqual(sent_mail.sender.name, "CapaBot")
+        self.assertEqual(sent_mail.to[0].email, "ventas@example.com")
+        self.assertEqual(sent_mail.subject, "Notificación de visita")
+        self.assertEqual(sent_mail.text, "hola")
+
+    def test_reports_failed_when_mailtrap_rejects_the_message(self) -> None:
+        client = RecordingMailtrapClient(success=False)
+        provider = MailtrapEmailProvider(
+            token="mailtrap-token",
+            from_address="robot@example.com",
+            client_factory=lambda token: client,
+        )
+
+        outcome = provider.send(self._contact(), "hola", self._request())
+
+        self.assertEqual(outcome.status, "failed")
+        self.assertIn("mailtrap rejected payload", outcome.detail)
 
     def test_sends_email_with_injected_smtp_client(self) -> None:
         client = RecordingSmtpClient()

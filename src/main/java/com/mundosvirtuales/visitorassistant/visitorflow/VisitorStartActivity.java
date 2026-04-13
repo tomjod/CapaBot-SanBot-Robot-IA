@@ -1,6 +1,7 @@
 package com.mundosvirtuales.visitorassistant.visitorflow;
 
 import android.content.Intent;
+import android.graphics.Paint;
 import android.os.Bundle;
 import android.view.View;
 import android.view.WindowManager;
@@ -20,7 +21,7 @@ public class VisitorStartActivity extends TopBaseActivity implements VisitorLaun
     private Button talkButton;
     private Button leaveMessageButton;
     private Button requestInformationButton;
-    private Button legacyBaseButton;
+    private TextView legacyBaseLink;
     private TextView statusView;
     private ProgressBar checkingProgressBar;
     private View maintenanceOverlay;
@@ -46,7 +47,7 @@ public class VisitorStartActivity extends TopBaseActivity implements VisitorLaun
         talkButton = findViewById(R.id.visitorStartTalkToPerson);
         leaveMessageButton = findViewById(R.id.visitorStartLeaveMessage);
         requestInformationButton = findViewById(R.id.visitorStartRequestInformation);
-        legacyBaseButton = findViewById(R.id.visitorStartLegacyBase);
+        legacyBaseLink = findViewById(R.id.visitorStartLegacyBaseLink);
         statusView = findViewById(R.id.visitorStartStatus);
         checkingProgressBar = findViewById(R.id.visitorStartCheckingProgress);
         maintenanceOverlay = findViewById(R.id.visitorStartMaintenanceOverlay);
@@ -71,7 +72,8 @@ public class VisitorStartActivity extends TopBaseActivity implements VisitorLaun
         talkButton.setOnClickListener(view -> route(VisitorStartNavigation.VisitReason.TALK_TO_PERSON));
         leaveMessageButton.setOnClickListener(view -> route(VisitorStartNavigation.VisitReason.LEAVE_MESSAGE));
         requestInformationButton.setOnClickListener(view -> route(VisitorStartNavigation.VisitReason.REQUEST_INFORMATION));
-        legacyBaseButton.setOnClickListener(view -> route(VisitorStartNavigation.VisitReason.LEGACY_BASE));
+        legacyBaseLink.setPaintFlags(legacyBaseLink.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
+        legacyBaseLink.setOnClickListener(view -> route(VisitorStartNavigation.VisitReason.LEGACY_BASE));
         maintenanceRetryButton.setOnClickListener(view -> presenter.onRetry());
 
         presenter.start();
@@ -88,7 +90,8 @@ public class VisitorStartActivity extends TopBaseActivity implements VisitorLaun
             talkButton.setEnabled(enabled);
             leaveMessageButton.setEnabled(enabled);
             requestInformationButton.setEnabled(enabled);
-            legacyBaseButton.setEnabled(enabled);
+            legacyBaseLink.setEnabled(enabled);
+            legacyBaseLink.setAlpha(enabled ? 1f : 0.5f);
 
             statusView.setText(checking ? state.getMessage() : "");
             statusView.setVisibility(checking ? View.VISIBLE : View.GONE);
@@ -115,7 +118,7 @@ public class VisitorStartActivity extends TopBaseActivity implements VisitorLaun
         }
 
         if (target == VisitorStartNavigation.Target.MESSAGE_FLOW) {
-            startActivity(VisitorLeaveMessageActivity.createIntent(this));
+            startActivity(VisitorLeaveMessageActivity.createIntent(this, buildVisitorName()));
             finish();
             return;
         }

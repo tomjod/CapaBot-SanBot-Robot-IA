@@ -24,9 +24,11 @@ public class VisitorFlowPresenter {
     private final String maintenanceMessage;
     private final String emptyMessage;
     private final String successTemplate;
+    private final String visitorNameRequiredMessage;
 
     private List<VisitorDtos.ContactSummary> contacts = Collections.emptyList();
     private VisitorDtos.ContactSummary lastSelectedContact;
+    private String lastSubmittedVisitorName;
     private VisitorFlowState currentState;
 
     public VisitorFlowPresenter(View view,
@@ -42,7 +44,8 @@ public class VisitorFlowPresenter {
                                 String loadFailedMessage,
                                 String maintenanceMessage,
                                 String emptyMessage,
-                                String successTemplate) {
+                                String successTemplate,
+                                String visitorNameRequiredMessage) {
         this.view = view;
         this.contactCatalogGateway = contactCatalogGateway;
         this.notificationDispatchGateway = notificationDispatchGateway;
@@ -57,6 +60,7 @@ public class VisitorFlowPresenter {
         this.maintenanceMessage = maintenanceMessage;
         this.emptyMessage = emptyMessage;
         this.successTemplate = successTemplate;
+        this.visitorNameRequiredMessage = visitorNameRequiredMessage;
     }
 
     public void start() {
@@ -65,13 +69,13 @@ public class VisitorFlowPresenter {
 
     public void onRetry() {
         if (lastSelectedContact != null && currentState != null && currentState.getScreen() == VisitorFlowState.Screen.FAILED) {
-            submitContact(lastSelectedContact);
+            submitContact(lastSelectedContact, lastSubmittedVisitorName);
             return;
         }
         loadContacts();
     }
 
-    public void onContactSelected(VisitorDtos.ContactSummary contact) {
+    public void onContactSelected(VisitorDtos.ContactSummary contact, String visitorName) {
         if (contact == null) {
             return;
         }
@@ -83,11 +87,20 @@ public class VisitorFlowPresenter {
             return;
         }
 
-        submitContact(contact);
+        String normalizedVisitorName = VisitorNameNormalizer.normalizeOrNull(visitorName);
+        if (normalizedVisitorName == null) {
+            currentState = VisitorFlowState.ready(contacts, visitorNameRequiredMessage, false, false);
+            view.render(currentState);
+            robotSpeechPort.speak(visitorNameRequiredMessage);
+            return;
+        }
+
+        submitContact(contact, normalizedVisitorName);
     }
 
     private void loadContacts() {
         lastSelectedContact = null;
+        lastSubmittedVisitorName = null;
         contacts = Collections.emptyList();
         currentState = VisitorFlowState.loading(loadingMessage);
         view.render(currentState);
@@ -115,12 +128,13 @@ public class VisitorFlowPresenter {
         });
     }
 
-    private void submitContact(final VisitorDtos.ContactSummary contact) {
+    private void submitContact(final VisitorDtos.ContactSummary contact, final String visitorName) {
         lastSelectedContact = contact;
+        lastSubmittedVisitorName = visitorName;
         currentState = VisitorFlowState.submitting(contacts, contact.getDisplayName(), contact.getId());
         view.render(currentState);
 
-        notificationDispatchGateway.submitNotification(contact, new NotificationDispatchGateway.Callback() {
+        notificationDispatchGateway.submitNotification(contact, visitorName, new NotificationDispatchGateway.Callback() {
             @Override
             public void onSuccess(VisitorDtos.NotificationResult result) {
                 String status = result != null ? result.getStatus() : null;

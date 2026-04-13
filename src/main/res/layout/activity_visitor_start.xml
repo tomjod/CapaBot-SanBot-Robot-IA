@@ -7,7 +7,8 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fillViewport="true">
+        android:fillViewport="true"
+        android:paddingBottom="56dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -16,120 +17,108 @@
             android:orientation="vertical"
             android:padding="@dimen/visitor_screen_padding">
 
-        <LinearLayout
-        android:layout_width="@dimen/visitor_content_width"
-        android:layout_height="wrap_content"
-        android:background="@drawable/visitor_panel_background"
-        android:orientation="vertical"
-        android:padding="@dimen/visitor_panel_padding">
+            <LinearLayout
+                android:layout_width="@dimen/visitor_content_width"
+                android:layout_height="wrap_content"
+                android:background="@drawable/visitor_panel_background"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:padding="@dimen/visitor_panel_padding">
 
-        <TextView
-            android:id="@+id/visitorStartTitle"
-            style="@style/VisitorTitleText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="@string/visitor_start_title" />
+                <TextView
+                    android:id="@+id/visitorStartTitle"
+                    style="@style/VisitorTitleText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="@string/visitor_start_title" />
 
-        <TextView
-            android:id="@+id/visitorStartSubtitle"
-            style="@style/VisitorSubtitleText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/visitor_spacing_sm"
-            android:gravity="center"
-            android:text="@string/visitor_start_subtitle" />
+                <ImageView
+                    android:id="@+id/visitorStartBussoLogo"
+                    android:layout_width="220dp"
+                    android:layout_height="86dp"
+                    android:layout_marginTop="@dimen/visitor_spacing_md"
+                    android:adjustViewBounds="true"
+                    android:contentDescription="@string/visitor_information_logo_content_description"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/busso_group_logo" />
+            </LinearLayout>
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/visitor_spacing_md"
-            android:gravity="center"
-            android:text="@string/visitor_start_description"
-            android:textColor="@color/visitorTextSecondary"
-            android:textSize="18sp" />
-    </LinearLayout>
+            <LinearLayout
+                android:layout_width="@dimen/visitor_content_width"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/visitor_spacing_md"
+                android:background="@drawable/visitor_panel_background"
+                android:orientation="vertical"
+                android:padding="@dimen/visitor_panel_padding">
 
-        <LinearLayout
-        android:layout_width="@dimen/visitor_content_width"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/visitor_spacing_md"
-        android:background="@drawable/visitor_panel_background"
-        android:gravity="center_horizontal"
-        android:orientation="vertical"
-        android:padding="@dimen/visitor_panel_padding">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/visitor_start_choose_option"
+                    android:textColor="@color/visitorTextPrimary"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
 
-        <Button
-            android:id="@+id/visitorStartTalkToPerson"
-            style="@style/VisitorPrimaryButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/visitor_start_talk_to_person" />
+                <Button
+                    android:id="@+id/visitorStartTalkToPerson"
+                    style="@style/VisitorPrimaryButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/visitor_spacing_md"
+                    android:text="@string/visitor_start_talk_to_person" />
 
-        <Button
-            android:id="@+id/visitorStartLeaveMessage"
-            style="@style/VisitorSecondaryButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/visitor_spacing_md"
-            android:text="@string/visitor_start_leave_message" />
+                <Button
+                    android:id="@+id/visitorStartLeaveMessage"
+                    style="@style/VisitorSecondaryButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/visitor_start_leave_message" />
 
-        <Button
-            android:id="@+id/visitorStartRequestInformation"
-            style="@style/VisitorSecondaryButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/visitor_spacing_md"
-            android:text="@string/visitor_start_request_information" />
+                <Button
+                    android:id="@+id/visitorStartRequestInformation"
+                    style="@style/VisitorSecondaryButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/visitor_spacing_md"
+                    android:text="@string/visitor_start_request_information" />
 
-        <TextView
-            android:id="@+id/visitorStartStatus"
-            style="@style/VisitorBodyText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/visitor_spacing_md"
-            android:gravity="center"
-            android:textColor="@color/visitorTextSecondary"
-            android:visibility="gone" />
+                <TextView
+                    android:id="@+id/visitorStartStatus"
+                    style="@style/VisitorBodyText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/visitor_spacing_md"
+                    android:gravity="center"
+                    android:textColor="@color/visitorTextSecondary"
+                    android:visibility="gone" />
 
-        <ProgressBar
-            android:id="@+id/visitorStartCheckingProgress"
-            style="?android:attr/progressBarStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/visitor_spacing_sm"
-            android:visibility="gone" />
-    </LinearLayout>
-
-        <LinearLayout
-        android:layout_width="@dimen/visitor_content_width"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/visitor_spacing_md"
-        android:background="@drawable/visitor_panel_background"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:padding="@dimen/visitor_panel_padding">
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="@string/visitor_start_legacy_hint"
-            android:textColor="@color/visitorTextSecondary"
-            android:textSize="16sp" />
-
-        <Button
-            android:id="@+id/visitorStartLegacyBase"
-            style="@style/VisitorSecondaryButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/visitor_spacing_md"
-            android:text="@string/visitor_start_legacy_base" />
-    </LinearLayout>
+                <ProgressBar
+                    android:id="@+id/visitorStartCheckingProgress"
+                    style="?android:attr/progressBarStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="@dimen/visitor_spacing_sm"
+                    android:visibility="gone" />
+            </LinearLayout>
 
         </LinearLayout>
 
     </ScrollView>
+
+    <TextView
+        android:id="@+id/visitorStartLegacyBaseLink"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|start"
+        android:layout_marginStart="20dp"
+        android:layout_marginBottom="16dp"
+        android:padding="4dp"
+        android:text="@string/visitor_start_legacy_base_link"
+        android:textColor="@color/colorPrimaryDark"
+        android:textSize="14sp" />
 
     <LinearLayout
         android:id="@+id/visitorStartMaintenanceOverlay"
