@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -34,6 +35,7 @@ public class VisitorInformationActivity extends TopBaseActivity {
     private TextView detailTitleView;
     private TextView detailSummaryView;
     private TextView detailView;
+    private VisitorIdleHomeController idleHomeController;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,6 +44,7 @@ public class VisitorInformationActivity extends TopBaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_visitor_information);
 
+        idleHomeController = new VisitorIdleHomeController(this, 45000L);
         speechManager = (SpeechManager) getUnitManager(FuncConstant.SPEECH_MANAGER);
 
         LinearLayout optionsContainer = findViewById(R.id.visitorInformationOptions);
@@ -103,6 +106,30 @@ public class VisitorInformationActivity extends TopBaseActivity {
             speechManager.startSpeak(option.getDetail(), MySettings.getSpeakDefaultOption());
             concludeSpeak(speechManager);
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (idleHomeController != null) {
+            idleHomeController.start();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        if (idleHomeController != null) {
+            idleHomeController.stop();
+        }
+        super.onPause();
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        if (idleHomeController != null) {
+            idleHomeController.onUserInteraction();
+        }
+        return super.dispatchTouchEvent(ev);
     }
 
     @Override

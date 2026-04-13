@@ -3,6 +3,7 @@ package com.mundosvirtuales.visitorassistant.visitorflow;
 import android.content.Intent;
 import android.graphics.Paint;
 import android.os.Bundle;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -30,6 +31,7 @@ public class VisitorStartActivity extends TopBaseActivity implements VisitorLaun
     private Button maintenanceRetryButton;
     private VisitorLauncherPresenter presenter;
     private VisitorLauncherState currentState = VisitorLauncherState.checking("");
+    private VisitorIdleHomeController idleHomeController;
 
     public static Intent createIntent(android.content.Context context, String visitorName) {
         Intent intent = new Intent(context, VisitorStartActivity.class);
@@ -54,6 +56,7 @@ public class VisitorStartActivity extends TopBaseActivity implements VisitorLaun
         maintenanceTitleView = findViewById(R.id.visitorStartMaintenanceTitle);
         maintenanceMessageView = findViewById(R.id.visitorStartMaintenanceMessage);
         maintenanceRetryButton = findViewById(R.id.visitorStartMaintenanceRetry);
+        idleHomeController = new VisitorIdleHomeController(this, 45000L);
 
         BackendApiClient apiClient = new BackendApiClient(
                 BuildConfig.VISITOR_API_BASE_URL,
@@ -82,6 +85,30 @@ public class VisitorStartActivity extends TopBaseActivity implements VisitorLaun
         );
 
         presenter.start();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (idleHomeController != null) {
+            idleHomeController.start();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        if (idleHomeController != null) {
+            idleHomeController.stop();
+        }
+        super.onPause();
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        if (idleHomeController != null) {
+            idleHomeController.onUserInteraction();
+        }
+        return super.dispatchTouchEvent(ev);
     }
 
     @Override

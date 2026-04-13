@@ -13,7 +13,7 @@
         tools:ignore="GoogleAppIndexingWarning">
         <!-- ACTIVITIES -->
         <activity
-            android:name=".visitorflow.VisitorStartActivity"
+            android:name=".visitorflow.VisitorTouchHomeActivity"
             android:exported="true"
             android:hardwareAccelerated="true"
             android:launchMode="singleTask">
@@ -22,6 +22,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".visitorflow.VisitorStartActivity"
+            android:exported="true"
+            android:hardwareAccelerated="true"
+            android:launchMode="singleTask" />
         <activity
             android:name=".MyBaseActivity"
             android:exported="true"

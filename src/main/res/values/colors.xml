@@ -18,6 +18,10 @@
 
     <color name="visitorBackgroundStart">#F5F7FB</color>
     <color name="visitorBackgroundEnd">#E8EEF7</color>
+    <color name="visitorHeroBackgroundStart">#0F2749</color>
+    <color name="visitorHeroBackgroundCenter">#173B6D</color>
+    <color name="visitorHeroBackgroundEnd">#2D5E93</color>
+    <color name="visitorHeroGlow">#1AFFFFFF</color>
     <color name="visitorSurface">#FFFFFFFF</color>
     <color name="visitorSurfaceMuted">#F8FAFD</color>
     <color name="visitorTextPrimary">#1F2937</color>

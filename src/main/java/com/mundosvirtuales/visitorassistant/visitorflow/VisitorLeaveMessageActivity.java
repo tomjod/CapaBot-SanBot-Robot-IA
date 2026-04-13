@@ -9,6 +9,7 @@ import android.os.Handler;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.TextWatcher;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -61,6 +62,7 @@ public class VisitorLeaveMessageActivity extends TopBaseActivity implements Visi
     private Button finishButton;
     private VisitorMessageFlowState.Screen lastRenderedScreen;
     private String visitorName;
+    private VisitorIdleHomeController idleHomeController;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +71,7 @@ public class VisitorLeaveMessageActivity extends TopBaseActivity implements Visi
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_visitor_message);
 
+        idleHomeController = new VisitorIdleHomeController(this, 45000L);
         speechManager = (SpeechManager) getUnitManager(FuncConstant.SPEECH_MANAGER);
 
         titleView = findViewById(R.id.visitorMessageTitle);
@@ -155,6 +158,30 @@ public class VisitorLeaveMessageActivity extends TopBaseActivity implements Visi
         finishButton.setOnClickListener(view -> returnToStart());
 
         new Handler().post(presenter::start);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (idleHomeController != null) {
+            idleHomeController.start();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        if (idleHomeController != null) {
+            idleHomeController.stop();
+        }
+        super.onPause();
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        if (idleHomeController != null) {
+            idleHomeController.onUserInteraction();
+        }
+        return super.dispatchTouchEvent(ev);
     }
 
     @Override

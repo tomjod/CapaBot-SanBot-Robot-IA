@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/visitorTouchHomeRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/visitor_touch_home_background"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?android:attr/selectableItemBackground">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="32dp">
+
+        <LinearLayout
+            android:layout_width="760dp"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+            <ImageView
+                android:id="@+id/visitorTouchHomeLogo"
+                android:layout_width="260dp"
+                android:layout_height="100dp"
+                android:adjustViewBounds="true"
+                android:contentDescription="@string/visitor_information_logo_content_description"
+                android:scaleType="centerInside"
+                android:src="@drawable/busso_group_logo" />
+
+            <TextView
+                android:id="@+id/visitorTouchHomeTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="36dp"
+                android:gravity="center"
+                android:text="@string/visitor_touch_home_title"
+                android:textColor="@color/colorWhite"
+                android:textSize="54sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/visitorTouchHomeSubtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:gravity="center"
+                android:text="@string/visitor_touch_home_subtitle"
+                android:textColor="@color/colorAlphaWhite"
+                android:textSize="24sp" />
+
+            <TextView
+                android:id="@+id/visitorTouchHomeHint"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="36dp"
+                android:background="@drawable/visitor_primary_button"
+                android:paddingLeft="44dp"
+                android:paddingTop="18dp"
+                android:paddingRight="44dp"
+                android:paddingBottom="18dp"
+                android:text="@string/visitor_touch_home_hint"
+                android:textColor="@color/colorWhite"
+                android:textSize="28sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</FrameLayout>

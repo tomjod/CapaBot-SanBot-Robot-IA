@@ -7,6 +7,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.InputType;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -56,6 +57,7 @@ public class VisitorContactActivity extends TopBaseActivity implements VisitorFl
     private int contactBindingGeneration;
     private VisitorFlowState.Screen lastRenderedScreen;
     private String visitorName;
+    private VisitorIdleHomeController idleHomeController;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,6 +68,7 @@ public class VisitorContactActivity extends TopBaseActivity implements VisitorFl
 
         mainHandler = new Handler();
         contactBindingExecutor = Executors.newSingleThreadExecutor();
+        idleHomeController = new VisitorIdleHomeController(this, 45000L);
         speechManager = (SpeechManager) getUnitManager(FuncConstant.SPEECH_MANAGER);
 
         titleView = findViewById(R.id.visitorTitle);
@@ -126,6 +129,30 @@ public class VisitorContactActivity extends TopBaseActivity implements VisitorFl
         finishButton.setOnClickListener(view -> returnToBase());
 
         contactsList.postDelayed(presenter::start, 120);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (idleHomeController != null) {
+            idleHomeController.start();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        if (idleHomeController != null) {
+            idleHomeController.stop();
+        }
+        super.onPause();
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        if (idleHomeController != null) {
+            idleHomeController.onUserInteraction();
+        }
+        return super.dispatchTouchEvent(ev);
     }
 
     @Override

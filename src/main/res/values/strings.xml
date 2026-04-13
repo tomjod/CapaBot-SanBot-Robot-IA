@@ -81,6 +81,9 @@
     <string name="visitor_start_choose_option">Seleccione una opción</string>
     <string name="visitor_start_company_caption">Busso Group · holding empresarial</string>
     <string name="visitor_start_legacy_base_link">modo base</string>
+    <string name="visitor_touch_home_title">Bienvenido a Busso Group</string>
+    <string name="visitor_touch_home_subtitle">Estoy listo para orientarle y ayudarle con su visita.</string>
+    <string name="visitor_touch_home_hint">Toque la pantalla para comenzar</string>
     <string name="visitor_start_legacy_base">Modo base</string>
     <string name="visitor_start_legacy_hint">Si necesita el flujo histórico, puede continuar por modo base sin perder el retorno corregido.</string>
     <string name="visitor_flow_title">Recepción de visitas</string>
