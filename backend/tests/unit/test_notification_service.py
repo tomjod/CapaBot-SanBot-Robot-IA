@@ -64,6 +64,32 @@ class NotificationServiceTest(unittest.TestCase):
         self.assertIn("no tiene Telegram disponible", outcome.to_dict()["detail"])
         self.assertFalse(outcome.retryable)
 
+    def test_returns_unavailable_when_contact_is_manually_disabled_even_with_channels(self) -> None:
+        repository = InMemoryContactRepository(
+            [
+                Contact(
+                    id="ventas-1",
+                    display_name="Ventas",
+                    enabled=False,
+                    telegram_chat_id="chat-1",
+                    email="ventas@example.com",
+                    email_enabled=True,
+                )
+            ]
+        )
+        service = NotificationService(
+            contact_repository=repository,
+            telegram_provider=FakeTelegramProvider(status="sent"),
+            email_provider=FakeEmailProvider(status="sent"),
+            message_builder=TemplateMessageBuilder(),
+        )
+
+        outcome = service.submit(self._request())
+
+        self.assertEqual(outcome.status, "unavailable")
+        self.assertEqual(outcome.to_dict()["channels"], {"telegram": "unavailable", "email": "unavailable"})
+        self.assertFalse(outcome.retryable)
+
     def test_uses_template_fallback_when_no_rewriter_is_configured(self) -> None:
         repository = InMemoryContactRepository(
             [Contact(id="ventas-1", display_name="Ventas", telegram_chat_id="chat-1")]

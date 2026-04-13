@@ -9,6 +9,6 @@
     <dimen name="visitor_panel_radius">18dp</dimen>
     <dimen name="visitor_button_height">56dp</dimen>
     <dimen name="visitor_spacing_sm">8dp</dimen>
-    <dimen name="visitor_spacing_md">16dp</dimen>
+    <dimen name="visitor_spacing_md">30dp</dimen>
     <dimen name="visitor_spacing_lg">24dp</dimen>
 </resources>

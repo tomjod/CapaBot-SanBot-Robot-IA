@@ -39,7 +39,7 @@
                 android:gravity="center"
                 android:text="@string/visitor_touch_home_title"
                 android:textColor="@color/colorWhite"
-                android:textSize="54sp"
+                android:textSize="60sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -64,7 +64,7 @@
                 android:paddingBottom="18dp"
                 android:text="@string/visitor_touch_home_hint"
                 android:textColor="@color/colorWhite"
-                android:textSize="28sp"
+                android:textSize="38sp"
                 android:textStyle="bold" />
 
         </LinearLayout>

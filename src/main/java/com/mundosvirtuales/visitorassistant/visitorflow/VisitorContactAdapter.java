@@ -57,6 +57,12 @@ public class VisitorContactAdapter extends ArrayAdapter<ContactListItemViewModel
                 channels.setVisibility(View.VISIBLE);
                 channels.setText(channelsLabel);
             }
+            title.setTextColor(getContext().getResources().getColor(item.isEnabled()
+                    ? R.color.visitorTextPrimary
+                    : R.color.visitorTextSecondary));
+            channels.setTextColor(getContext().getResources().getColor(item.isEnabled()
+                    ? R.color.visitorTextSecondary
+                    : R.color.visitorBadgeMutedText));
             view.setEnabled(item.isEnabled());
             view.setAlpha(item.isEnabled() ? 1f : 0.72f);
         }

@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Contactos - CapaBot</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+            padding: 20px;
+        }
+        .container { max-width: 1100px; margin: 0 auto; }
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 24px;
+            color: #1a1a2e;
+        }
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .card h2 {
+            font-size: 1.2rem;
+            margin-bottom: 16px;
+            color: #16213e;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1120px;
+        }
+        th, td {
+            text-align: left;
+            padding: 10px 12px;
+            border-bottom: 1px solid #eee;
+            vertical-align: top;
+        }
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #555;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+        tr:hover { background: #f8f9fa; }
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-right: 4px;
+        }
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-danger { background: #f8d7da; color: #842029; }
+        .badge-warning { background: #fff3cd; color: #664d03; }
+        .badge-muted { background: #e9ecef; color: #6c757d; }
+        .btn {
+            display: inline-block;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        .btn-primary { background: #4361ee; color: #fff; }
+        .btn-primary:hover { background: #3a56d4; }
+        .btn-warning { background: #f59e0b; color: #fff; }
+        .btn-warning:hover { background: #d97706; }
+        .btn-danger { background: #ef4444; color: #fff; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: #555;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+        .form-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .actions-cell { white-space: nowrap; }
+        .table-scroll {
+            width: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+            border-radius: 8px;
+        }
+        .col-id {
+            min-width: 92px;
+            word-break: break-word;
+        }
+        .col-name { min-width: 130px; }
+        .col-job { min-width: 130px; }
+        .col-company { min-width: 140px; }
+        .col-phone {
+            min-width: 110px;
+            word-break: break-word;
+        }
+        .col-email {
+            min-width: 180px;
+            word-break: break-word;
+        }
+        .col-status { min-width: 120px; }
+        .col-channels { min-width: 110px; }
+        .actions-cell {
+            min-width: 140px;
+            white-space: nowrap;
+        }
+        .actions-cell .btn + .btn,
+        .actions-cell form + form,
+        .actions-cell .btn + form,
+        .actions-cell form + .btn {
+            margin-left: 6px;
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: #fff;
+            border-radius: 8px;
+            padding: 24px;
+            width: 90%;
+            max-width: 500px;
+        }
+        .modal h2 { margin-bottom: 20px; }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        .btn-cancel {
+            background: #6c757d;
+            color: #fff;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #888;
+        }
+        .alert {
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 16px;
+            border: 1px solid #fecaca;
+            background: #fef2f2;
+            color: #991b1b;
+        }
+        .list-stack {
+            display: grid;
+            gap: 12px;
+        }
+        .request-item {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 14px 16px;
+            background: #fafafa;
+        }
+        .request-item strong {
+            color: #1f2937;
+        }
+        .request-meta {
+            margin-top: 8px;
+            color: #4b5563;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        .request-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Administración de Contactos</h1>
+
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 12px;">
+                <h2 style="margin: 0;">Solicitudes pendientes de registro Telegram</h2>
+                <span class="badge badge-warning">{{ pending_registrations|length }} pendientes</span>
+            </div>
+
+            {% if pending_registrations %}
+            <div class="list-stack">
+                {% for registration in pending_registrations %}
+                <div class="request-item">
+                    <strong>{{ registration.first_name or registration.telegram_username or registration.telegram_user_id }}</strong>
+                    <div class="request-meta">
+                        <div><strong>Teléfono:</strong> {{ registration.phone_number }} · normalizado {{ registration.normalized_phone }}</div>
+                        <div><strong>Telegram:</strong> user_id={{ registration.telegram_user_id }} · chat_id={{ registration.telegram_chat_id }}</div>
+                        <div><strong>Username:</strong> {{ registration.telegram_username or '-' }} · <strong>Estado:</strong> {{ registration.status }}</div>
+                        <div><strong>Empresa:</strong> {{ registration.company_label or registration.company or '-' }} · <strong>Cargo:</strong> {{ registration.job_title or '-' }}</div>
+                        <div><strong>Etapa:</strong> {{ registration.flow_state }}</div>
+                        <div><strong>Solicitado:</strong> {{ registration.created_at }}</div>
+                    </div>
+                    <div class="request-actions">
+                        <button
+                            type="button"
+                            class="btn btn-primary btn-sm js-approve-registration"
+                            data-registration-normalized-phone="{{ registration.normalized_phone }}"
+                            data-registration-phone-number="{{ registration.phone_number }}"
+                            data-registration-telegram-user-id="{{ registration.telegram_user_id }}"
+                            data-registration-telegram-chat-id="{{ registration.telegram_chat_id }}"
+                            data-registration-telegram-username="{{ registration.telegram_username or '' }}"
+                            data-registration-first-name="{{ registration.first_name or '' }}"
+                            data-registration-company="{{ registration.company or '' }}"
+                            data-registration-job-title="{{ registration.job_title or '' }}"
+                        >Aprobar y crear contacto</button>
+                        <form method="post" action="/admin/pending-registrations/resolve" style="display: inline;" class="js-resolve-registration" data-registration-label="{{ registration.first_name or registration.telegram_username or registration.telegram_user_id }}">
+                            <input type="hidden" name="normalized_phone" value="{{ registration.normalized_phone }}">
+                            <input type="hidden" name="telegram_user_id" value="{{ registration.telegram_user_id }}">
+                            <button type="submit" class="btn btn-warning btn-sm">Marcar resuelta</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <p>No hay solicitudes pendientes de registro.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            {% if error_message %}
+            <div class="alert" role="alert">
+                {{ error_message }}
+            </div>
+            {% endif %}
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2 style="margin: 0;">Lista de Contactos</h2>
+                <button class="btn btn-primary" onclick="showCreateModal()">+ Nuevo Contacto</button>
+            </div>
+
+            {% if contacts %}
+            <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-id">ID</th>
+                        <th class="col-name">Nombre</th>
+                        <th class="col-job">Cargo</th>
+                        <th class="col-company">Empresa</th>
+                        <th class="col-phone">Teléfono</th>
+                        <th class="col-status">Disponibilidad</th>
+                        <th class="col-status">Telegram</th>
+                        <th class="col-email">Email</th>
+                        <th class="col-channels">Canales</th>
+                        <th class="actions-cell">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contact in contacts %}
+                    <tr>
+                        <td class="col-id"><code>{{ contact.id }}</code></td>
+                        <td class="col-name">{{ contact.display_name }}</td>
+                        <td class="col-job">{{ contact.job_title or '-' }}</td>
+                        <td class="col-company">{{ contact.company_label or contact.company or '-' }}</td>
+                        <td class="col-phone">{{ contact.phone or '-' }}</td>
+                        <td class="col-status">
+                            {% if contact.available %}
+                                <span class="badge badge-success">Disponible</span>
+                            {% elif not contact.enabled %}
+                                <span class="badge badge-danger">No disponible</span>
+                            {% else %}
+                                <span class="badge badge-warning">Sin canales</span>
+                            {% endif %}
+                        </td>
+                        <td class="col-status">{% if contact.telegram_available %}Vinculado{% else %}Pendiente{% endif %}</td>
+                        <td class="col-email">{{ contact.email or '-' }}</td>
+                        <td class="col-channels">
+                            {% if contact.telegram_available %}
+                                <span class="badge badge-success">Telegram</span>
+                            {% endif %}
+                            {% if contact.email_available %}
+                                <span class="badge badge-success">Email</span>
+                            {% endif %}
+                            {% if not contact.enabled %}
+                                <span class="badge badge-danger">Operador pausado</span>
+                            {% elif not contact.available %}
+                                <span class="badge badge-muted">Sin canales</span>
+                            {% endif %}
+                        </td>
+                        <td class="actions-cell">
+                            <button
+                                type="button"
+                                class="btn btn-warning btn-sm js-edit-contact"
+                                data-contact-id="{{ contact.id }}"
+                                data-contact-display-name="{{ contact.display_name }}"
+                                data-contact-job-title="{{ contact.job_title or '' }}"
+                                data-contact-company="{{ contact.company or '' }}"
+                                data-contact-enabled="{{ 'true' if contact.enabled else 'false' }}"
+                                data-contact-phone="{{ contact.phone or '' }}"
+                                data-contact-email="{{ contact.email or '' }}"
+                                data-contact-email-enabled="{{ 'true' if contact.email_enabled else 'false' }}"
+                            >Editar</button>
+                            <form method="post" action="/admin/contacts/{{ contact.id }}/delete" style="display: inline;" class="js-delete-contact" data-contact-display-name="{{ contact.display_name }}">
+                                <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <p>No hay contactos registrados</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Approval Modal -->
+    <div class="modal-overlay{% if error_mode == 'approve' %} active{% endif %}" id="approveModal">
+        <div class="modal">
+            <h2>Aprobar preregistro Telegram</h2>
+            <form method="post" action="/admin/pending-registrations/approve">
+                <input type="hidden" id="approve-normalized-phone" name="normalized_phone" value="{{ approval_form.normalized_phone }}">
+                <input type="hidden" id="approve-telegram-user-id" name="telegram_user_id" value="{{ approval_form.telegram_user_id }}">
+                <div class="form-group">
+                    <label for="approve-id-preview">ID generado automáticamente</label>
+                    <input type="text" id="approve-id-preview" disabled style="background: #f5f5f5;" value="Se genera automáticamente al aprobar según empresa + cargo">
+                </div>
+                <div class="form-group">
+                    <label for="approve-name">Nombre *</label>
+                    <input type="text" id="approve-name" name="display_name" required value="{{ approval_form.display_name }}">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="approve-job-title">Cargo *</label>
+                        <input type="text" id="approve-job-title" name="job_title" required value="{{ approval_form.job_title }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="approve-company">Empresa *</label>
+                        <select id="approve-company" name="company" required>
+                            <option value="">Seleccione una empresa</option>
+                            {% for company in companies %}
+                            <option value="{{ company.id }}" {% if approval_form.company == company.id %}selected{% endif %}>{{ company.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="approve-phone">Teléfono *</label>
+                        <input type="text" id="approve-phone" name="phone" required value="{{ approval_form.phone }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="approve-email">Email</label>
+                        <input type="email" id="approve-email" name="email" value="{{ approval_form.email }}">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Telegram detectado</label>
+                    <input type="text" id="approve-telegram-summary" disabled style="background: #f5f5f5;" value="{{ approval_form.telegram_username or approval_form.telegram_user_id }} · chat {{ approval_form.telegram_chat_id }}">
+                </div>
+                {% if approval_form.flow_state and approval_form.flow_state != 'ready_for_approval' %}
+                <div class="alert" role="alert">
+                    Este preregistro todavía está incompleto. Pedile al usuario que termine la selección de empresa y cargo antes de aprobarlo.
+                </div>
+                {% endif %}
+                <div class="form-group">
+                    <input type="checkbox" id="approve-enabled" name="enabled" value="true" {% if approval_form.enabled %}checked{% endif %}>
+                    <label for="approve-enabled" style="display: inline;">Disponible para visitas</label>
+                </div>
+                <div class="form-group">
+                    <input type="checkbox" id="approve-email-enabled" name="email_enabled" value="true" {% if approval_form.email_enabled %}checked{% endif %}>
+                    <label for="approve-email-enabled" style="display: inline;">Habilitar email</label>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-cancel" onclick="hideApproveModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Crear y aprobar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create Modal -->
+    <div class="modal-overlay{% if error_mode == 'create' %} active{% endif %}" id="createModal">
+        <div class="modal">
+            <h2>Nuevo Contacto</h2>
+            <form method="post" action="/admin/contacts">
+                <div class="form-group">
+                    <label for="create-id">ID *</label>
+                    <input type="text" id="create-id" name="id" required placeholder="ej: reception-ventas" value="{{ create_form.id }}">
+                </div>
+                <div class="form-group">
+                    <label for="create-name">Nombre *</label>
+                    <input type="text" id="create-name" name="display_name" required placeholder="ej: Ventas" value="{{ create_form.display_name }}">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="create-job-title">Cargo *</label>
+                        <input type="text" id="create-job-title" name="job_title" required placeholder="ej: Gerente comercial" value="{{ create_form.job_title }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="create-company">Empresa *</label>
+                        <select id="create-company" name="company" required>
+                            <option value="">Seleccione una empresa</option>
+                            {% for company in companies %}
+                            <option value="{{ company.id }}" {% if create_form.company == company.id %}selected{% endif %}>{{ company.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="create-phone">Teléfono *</label>
+                        <input type="text" id="create-phone" name="phone" required placeholder="ej: +56 9 1234 5678" value="{{ create_form.phone }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="create-email">Email</label>
+                        <input type="email" id="create-email" name="email" placeholder="ej: ventas@example.com" value="{{ create_form.email }}">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <input type="checkbox" id="create-enabled" name="enabled" value="true" {% if create_form.enabled %}checked{% endif %}>
+                    <label for="create-enabled" style="display: inline;">Disponible para visitas</label>
+                </div>
+                <div class="form-group">
+                    <input type="checkbox" id="create-email-enabled" name="email_enabled" value="true" {% if create_form.email_enabled %}checked{% endif %}>
+                    <label for="create-email-enabled" style="display: inline;">Habilitar email</label>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-cancel" onclick="hideCreateModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Crear</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div class="modal-overlay{% if error_mode == 'update' %} active{% endif %}" id="editModal">
+        <div class="modal">
+            <h2>Editar Contacto</h2>
+            <form id="editForm" method="post" action="{% if update_form.id %}/admin/contacts/{{ update_form.id }}/update{% endif %}">
+                <div class="form-group">
+                    <label>ID</label>
+                    <input type="text" id="edit-id-display" disabled style="background: #f5f5f5;" value="{{ update_form.id }}">
+                </div>
+                <div class="form-group">
+                    <label for="edit-name">Nombre *</label>
+                    <input type="text" id="edit-name" name="display_name" required value="{{ update_form.display_name }}">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit-job-title">Cargo *</label>
+                        <input type="text" id="edit-job-title" name="job_title" required value="{{ update_form.job_title }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-company">Empresa *</label>
+                        <select id="edit-company" name="company" required>
+                            <option value="">Seleccione una empresa</option>
+                            {% for company in companies %}
+                            <option value="{{ company.id }}" {% if update_form.company == company.id %}selected{% endif %}>{{ company.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit-phone">Teléfono *</label>
+                        <input type="text" id="edit-phone" name="phone" required value="{{ update_form.phone }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-email">Email</label>
+                        <input type="email" id="edit-email" name="email" value="{{ update_form.email }}">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <input type="checkbox" id="edit-enabled" name="enabled" value="true" {% if update_form.enabled %}checked{% endif %}>
+                    <label for="edit-enabled" style="display: inline;">Disponible para visitas</label>
+                </div>
+                <div class="form-group">
+                    <input type="checkbox" id="edit-email-enabled" name="email_enabled" value="true" {% if update_form.email_enabled %}checked{% endif %}>
+                    <label for="edit-email-enabled" style="display: inline;">Habilitar email</label>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-cancel" onclick="hideEditModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Actualizar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function showCreateModal() {
+            document.getElementById('createModal').classList.add('active');
+        }
+        function hideCreateModal() {
+            document.getElementById('createModal').classList.remove('active');
+        }
+        function populateEditModal(contact) {
+            document.getElementById('edit-id-display').value = contact.id;
+            document.getElementById('edit-name').value = contact.displayName;
+            document.getElementById('edit-job-title').value = contact.jobTitle;
+            document.getElementById('edit-company').value = contact.company;
+            document.getElementById('edit-enabled').checked = contact.enabled;
+            document.getElementById('edit-phone').value = contact.phone;
+            document.getElementById('edit-email').value = contact.email;
+            document.getElementById('edit-email-enabled').checked = contact.emailEnabled;
+            document.getElementById('editForm').action = '/admin/contacts/' + encodeURIComponent(contact.id) + '/update';
+        }
+        function showEditModal(contact) {
+            populateEditModal(contact);
+            document.getElementById('editModal').classList.add('active');
+        }
+        function hideEditModal() {
+            document.getElementById('editModal').classList.remove('active');
+        }
+        function populateApproveModal(registration) {
+            document.getElementById('approve-normalized-phone').value = registration.normalizedPhone;
+            document.getElementById('approve-telegram-user-id').value = registration.telegramUserId;
+            document.getElementById('approve-phone').value = registration.phoneNumber;
+            document.getElementById('approve-name').value = registration.firstName || registration.telegramUsername || '';
+            document.getElementById('approve-job-title').value = registration.jobTitle || '';
+            document.getElementById('approve-company').value = registration.company || '';
+            document.getElementById('approve-telegram-summary').value = (registration.telegramUsername || registration.telegramUserId) + ' · chat ' + registration.telegramChatId;
+        }
+        function showApproveModal(registration) {
+            populateApproveModal(registration);
+            document.getElementById('approveModal').classList.add('active');
+        }
+        function hideApproveModal() {
+            document.getElementById('approveModal').classList.remove('active');
+        }
+        document.querySelectorAll('.js-edit-contact').forEach(function(button) {
+            button.addEventListener('click', function() {
+                showEditModal({
+                    id: button.dataset.contactId,
+                    displayName: button.dataset.contactDisplayName,
+                    jobTitle: button.dataset.contactJobTitle,
+                    company: button.dataset.contactCompany,
+                    enabled: button.dataset.contactEnabled === 'true',
+                    phone: button.dataset.contactPhone,
+                    email: button.dataset.contactEmail,
+                    emailEnabled: button.dataset.contactEmailEnabled === 'true'
+                });
+            });
+        });
+        document.querySelectorAll('.js-approve-registration').forEach(function(button) {
+            button.addEventListener('click', function() {
+                showApproveModal({
+                    normalizedPhone: button.dataset.registrationNormalizedPhone,
+                    phoneNumber: button.dataset.registrationPhoneNumber,
+                    telegramUserId: button.dataset.registrationTelegramUserId,
+                    telegramChatId: button.dataset.registrationTelegramChatId,
+                    telegramUsername: button.dataset.registrationTelegramUsername,
+                    firstName: button.dataset.registrationFirstName,
+                    company: button.dataset.registrationCompany,
+                    jobTitle: button.dataset.registrationJobTitle
+                });
+            });
+        });
+        document.querySelectorAll('.js-delete-contact').forEach(function(form) {
+            form.addEventListener('submit', function(event) {
+                var displayName = form.dataset.contactDisplayName || 'este contacto';
+                if (!window.confirm('¿Eliminar contacto ' + displayName + '?')) {
+                    event.preventDefault();
+                }
+            });
+        });
+        document.querySelectorAll('.js-resolve-registration').forEach(function(form) {
+            form.addEventListener('submit', function(event) {
+                var label = form.dataset.registrationLabel || 'esta solicitud';
+                if (!window.confirm('¿Marcar como resuelta la solicitud de ' + label + '?')) {
+                    event.preventDefault();
+                }
+            });
+        });
+        // Close modals on overlay click
+        document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) {
+                    overlay.classList.remove('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
