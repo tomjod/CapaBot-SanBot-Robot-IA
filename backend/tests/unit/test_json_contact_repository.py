@@ -6,9 +6,15 @@ import unittest
 from pathlib import Path
 
 from backend.app.infra.json_contacts import JsonContactRepository
+from backend.app.infrastructure.json.contacts_repository import (
+    JsonContactRepository as InfrastructureJsonContactRepository,
+)
 
 
 class JsonContactRepositoryTest(unittest.TestCase):
+    def test_legacy_module_bridges_to_infrastructure_repository(self) -> None:
+        self.assertIs(JsonContactRepository, InfrastructureJsonContactRepository)
+
     def _write_contacts(self, payload: list[dict[str, object]]) -> Path:
         temp_dir = tempfile.TemporaryDirectory()
         self.addCleanup(temp_dir.cleanup)

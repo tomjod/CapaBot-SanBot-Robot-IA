@@ -95,6 +95,21 @@ class ContactsCrudEndpointsTest(unittest.TestCase):
         self.assertEqual(deleted.status_code, 204)
         self.assertEqual(self.client.get("/contacts/rrhh").status_code, 404)
 
+    def test_create_endpoint_reads_json_body_instead_of_query_param(self) -> None:
+        response = self.client.post(
+            "/contacts",
+            json={
+                "id": "soporte",
+                "display_name": "Soporte",
+                "job_title": "Analista",
+                "company": "transformapp",
+                "phone": "+56 9 3333 4444",
+            },
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["id"], "soporte")
+
     def test_rejects_duplicate_create_and_missing_delete(self) -> None:
         duplicate = self.client.post(
             "/contacts",

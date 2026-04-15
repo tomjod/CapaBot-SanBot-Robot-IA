@@ -8,6 +8,10 @@ from typing import Any
 from backend.app.domain.contact import Contact
 from backend.app.domain.notification import NotificationRequest
 from backend.app.infra.providers.telegram_provider import StubTelegramProvider, TelegramBotProvider
+from backend.app.infrastructure.providers.telegram_provider import (
+    StubTelegramProvider as InfrastructureStubTelegramProvider,
+    TelegramBotProvider as InfrastructureTelegramBotProvider,
+)
 
 
 class RecordingTransport:
@@ -21,6 +25,10 @@ class RecordingTransport:
 
 
 class TelegramProviderTest(unittest.TestCase):
+    def test_legacy_module_bridges_to_infrastructure_provider(self) -> None:
+        self.assertIs(TelegramBotProvider, InfrastructureTelegramBotProvider)
+        self.assertIs(StubTelegramProvider, InfrastructureStubTelegramProvider)
+
     def _contact(self) -> Contact:
         return Contact(id="ventas-1", display_name="Ventas", telegram_chat_id="-100123")
 

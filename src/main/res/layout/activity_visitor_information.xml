@@ -35,21 +35,14 @@
                 android:layout_marginTop="@dimen/visitor_spacing_md"
                 android:text="@string/visitor_information_company_badge" />
 
-            <TextView
+         <!--   <TextView
                 style="@style/VisitorTitleText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/visitor_spacing_md"
                 android:gravity="center"
-                android:text="@string/visitor_information_title" />
+                android:text="@string/visitor_information_title" />-->
 
-            <TextView
-                style="@style/VisitorSubtitleText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/visitor_spacing_md"
-                android:gravity="center"
-                android:text="@string/visitor_information_subtitle" />
 
             <TextView
                 style="@style/VisitorBodyText"
@@ -59,16 +52,10 @@
                 android:gravity="center"
                 android:text="@string/visitor_information_company_summary" />
 
-            <TextView
-                style="@style/VisitorContactMetaText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/visitor_spacing_md"
-                android:gravity="center"
-                android:text="@string/visitor_information_companies_hint" />
+
         </LinearLayout>
 
-        <LinearLayout
+        <!--<LinearLayout
             android:layout_width="@dimen/visitor_content_width"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/visitor_spacing_md"
@@ -147,7 +134,7 @@
                     android:layout_marginTop="@dimen/visitor_spacing_sm"
                     android:text="@string/visitor_information_contact_summary" />
             </LinearLayout>
-        </LinearLayout>
+        </LinearLayout>-->
 
         <LinearLayout
             android:layout_width="@dimen/visitor_content_width"

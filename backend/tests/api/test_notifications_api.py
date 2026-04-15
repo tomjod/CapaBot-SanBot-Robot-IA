@@ -3,7 +3,11 @@ from __future__ import annotations
 import unittest
 from datetime import datetime, timezone
 
-from backend.app.api.routes.notifications import submit_notification_response
+from backend.app.api.routes.notifications import register_notification_routes, submit_notification_response
+from backend.app.presentation.http.notifications_router import (
+    register_notification_routes as presentation_register_notification_routes,
+    submit_notification_response as presentation_submit_notification_response,
+)
 from backend.app.domain.providers import ChannelDelivery, NotificationOutcome
 
 
@@ -21,6 +25,10 @@ class StubNotificationService:
 
 
 class NotificationsRouteContractTest(unittest.TestCase):
+    def test_legacy_module_bridges_to_presentation_router_contracts(self) -> None:
+        self.assertIs(submit_notification_response, presentation_submit_notification_response)
+        self.assertIs(register_notification_routes, presentation_register_notification_routes)
+
     def _payload(self) -> dict[str, str]:
         return {
             "contact_id": "ventas-1",

@@ -2,7 +2,16 @@ from __future__ import annotations
 
 import unittest
 
-from backend.app.api.routes.contacts import full_contact_response, list_contacts_response
+from backend.app.api.routes.contacts import (
+    full_contact_response,
+    list_contacts_response,
+    register_contacts_routes,
+)
+from backend.app.presentation.http.contacts_router import (
+    full_contact_response as presentation_full_contact_response,
+    list_contacts_response as presentation_list_contacts_response,
+    register_contacts_routes as presentation_register_contacts_routes,
+)
 from backend.app.domain.contact import Contact
 
 
@@ -15,6 +24,11 @@ class StaticRepository:
 
 
 class ContactsRouteContractTest(unittest.TestCase):
+    def test_legacy_module_bridges_to_presentation_router_contracts(self) -> None:
+        self.assertIs(list_contacts_response, presentation_list_contacts_response)
+        self.assertIs(full_contact_response, presentation_full_contact_response)
+        self.assertIs(register_contacts_routes, presentation_register_contacts_routes)
+
     def test_returns_contacts_contract_with_availability_shape(self) -> None:
         repository = StaticRepository(
             [

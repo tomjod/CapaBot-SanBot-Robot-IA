@@ -3,7 +3,27 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Protocol
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
+try:
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
+except ModuleNotFoundError:  # pragma: no cover - dependency-free test fallback
+    @dataclass(frozen=True)
+    class KeyboardButton:  # type: ignore[no-redef]
+        text: str
+        request_contact: bool = False
+
+    @dataclass(frozen=True)
+    class ReplyKeyboardMarkup:  # type: ignore[no-redef]
+        keyboard: list[list[KeyboardButton]]
+        resize_keyboard: bool = False
+
+    @dataclass(frozen=True)
+    class InlineKeyboardButton:  # type: ignore[no-redef]
+        text: str
+        callback_data: str
+
+    @dataclass(frozen=True)
+    class InlineKeyboardMarkup:  # type: ignore[no-redef]
+        inline_keyboard: list[list[InlineKeyboardButton]]
 
 from backend.app.domain.contact import Contact
 

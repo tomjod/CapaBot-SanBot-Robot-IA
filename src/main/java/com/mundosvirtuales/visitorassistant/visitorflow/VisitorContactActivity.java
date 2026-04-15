@@ -20,6 +20,10 @@ import android.widget.Toast;
 import com.mundosvirtuales.visitorassistant.BuildConfig;
 import com.mundosvirtuales.visitorassistant.MySettings;
 import com.mundosvirtuales.visitorassistant.R;
+import com.mundosvirtuales.visitorassistant.features.visitor.presentation.contact.VisitorContactUiEvent;
+import com.mundosvirtuales.visitorassistant.features.visitor.presentation.contact.VisitorContactUiState;
+import com.mundosvirtuales.visitorassistant.features.visitor.presentation.contact.VisitorContactViewModel;
+import com.mundosvirtuales.visitorassistant.infra.storage.VisitorContactCacheStoreAdapter;
 import com.sanbot.opensdk.base.TopBaseActivity;
 import com.sanbot.opensdk.beans.FuncConstant;
 import com.sanbot.opensdk.function.unit.SpeechManager;
@@ -29,7 +33,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class VisitorContactActivity extends TopBaseActivity implements VisitorFlowPresenter.View {
+public class VisitorContactActivity extends TopBaseActivity {
 
     public static Intent createIntent(Context context, String visitorName) {
         Intent intent = new Intent(context, VisitorContactActivity.class);
@@ -39,6 +43,7 @@ public class VisitorContactActivity extends TopBaseActivity implements VisitorFl
 
     private SpeechManager speechManager;
     private VisitorFlowPresenter presenter;
+    private VisitorContactViewModel viewModel;
     private VisitorContactAdapter adapter;
 
     private TextView titleView;
@@ -55,7 +60,6 @@ public class VisitorContactActivity extends TopBaseActivity implements VisitorFl
     private Handler mainHandler;
     private ExecutorService contactBindingExecutor;
     private int contactBindingGeneration;
-    private VisitorFlowState.Screen lastRenderedScreen;
     private String visitorName;
     private VisitorIdleHomeController idleHomeController;
 
@@ -95,11 +99,20 @@ public class VisitorContactActivity extends TopBaseActivity implements VisitorFl
                 buildLocation(),
                 getString(R.string.visitor_flow_configuration_error)
         );
+        viewModel = new VisitorContactViewModel(
+                null,
+                new VisitorContactViewModel.Strings(
+                        getString(R.string.visitor_flow_ready),
+                        getString(R.string.visitor_flow_cache_hint_loading),
+                        getString(R.string.visitor_flow_cache_hint_retry),
+                        getString(R.string.visitor_flow_submitting)
+                )
+        );
         presenter = new VisitorFlowPresenter(
-                this,
+                viewModel,
                 apiClient,
                 apiClient,
-                new SharedPreferencesVisitorContactCacheStore(this),
+                new VisitorContactCacheStoreAdapter(this),
                 this::speakAsync,
                 getString(R.string.visitor_flow_loading),
                 getString(R.string.visitor_flow_loading_cached),
@@ -112,23 +125,20 @@ public class VisitorContactActivity extends TopBaseActivity implements VisitorFl
                 getString(R.string.visitor_flow_success),
                 getString(R.string.visitor_name_required)
         );
+        viewModel.attachPresenter(presenter);
+        viewModel.observe(this::render, this::handleEvent);
 
         contactsList.setOnItemClickListener((parent, view, position, id) -> {
             ContactListItemViewModel item = adapter.getItem(position);
             if (item != null) {
-                String normalizedVisitorName = VisitorNameNormalizer.normalizeOrNull(visitorName);
-                if (normalizedVisitorName != null) {
-                    presenter.onContactSelected(item.getContact(), normalizedVisitorName);
-                    return;
-                }
-                promptVisitorName(item.getContact(), false);
+                viewModel.onContactTapped(item.getContact(), visitorName);
             }
         });
 
-        retryButton.setOnClickListener(view -> presenter.onRetry());
+        retryButton.setOnClickListener(view -> viewModel.onRetryRequested());
         finishButton.setOnClickListener(view -> returnToBase());
 
-        contactsList.postDelayed(presenter::start, 120);
+        contactsList.postDelayed(viewModel::start, 120);
     }
 
     @Override
@@ -166,82 +176,33 @@ public class VisitorContactActivity extends TopBaseActivity implements VisitorFl
         }
     }
 
-    @Override
-    public void render(VisitorFlowState state) {
+    public void render(VisitorContactUiState state) {
         runOnUiThread(() -> {
             maybeShowSuccessToast(state);
-            String statusMessage = resolveMessage(state);
-            boolean maintenance = state.getScreen() == VisitorFlowState.Screen.MAINTENANCE;
-            statusView.setText(statusMessage);
-            statusView.setVisibility(statusMessage.isEmpty() || maintenance ? View.GONE : View.VISIBLE);
+            statusView.setText(state.getStatusMessage());
+            statusView.setVisibility(state.isStatusVisible() ? View.VISIBLE : View.GONE);
 
-            String cacheHint = resolveCacheHint(state);
-            cacheHintView.setText(cacheHint);
-            cacheHintView.setVisibility(cacheHint.isEmpty() ? View.GONE : View.VISIBLE);
-            maintenanceOverlay.setVisibility(maintenance ? View.VISIBLE : View.GONE);
+            cacheHintView.setText(state.getCacheHint());
+            cacheHintView.setVisibility(state.isCacheHintVisible() ? View.VISIBLE : View.GONE);
+            maintenanceOverlay.setVisibility(state.isMaintenanceVisible() ? View.VISIBLE : View.GONE);
             maintenanceTitleView.setText(R.string.visitor_maintenance_title);
-            maintenanceMessageView.setText(state.getMessage());
-            listHintView.setVisibility(maintenance ? View.GONE : View.VISIBLE);
-            progressBar.setVisibility(isBusy(state) ? View.VISIBLE : View.GONE);
-            retryButton.setVisibility(state.isRetryEnabled() ? View.VISIBLE : View.GONE);
-            finishButton.setText(state.getScreen() == VisitorFlowState.Screen.SUCCESS
+            maintenanceMessageView.setText(state.getMaintenanceMessage());
+            listHintView.setVisibility(state.isListHintVisible() ? View.VISIBLE : View.GONE);
+            progressBar.setVisibility(state.isProgressVisible() ? View.VISIBLE : View.GONE);
+            retryButton.setVisibility(state.isRetryVisible() ? View.VISIBLE : View.GONE);
+            finishButton.setText(state.isSuccess()
                     ? R.string.visitor_flow_finish
                     : R.string.visitor_flow_back_to_start);
 
             bindContacts(state.getContacts());
-            contactsList.setEnabled(state.getScreen() == VisitorFlowState.Screen.READY);
-            lastRenderedScreen = state.getScreen();
+            contactsList.setEnabled(state.isContactsEnabled());
         });
     }
 
-    private boolean isBusy(VisitorFlowState state) {
-        return state.getScreen() == VisitorFlowState.Screen.LOADING
-                || state.getScreen() == VisitorFlowState.Screen.SUBMITTING;
-    }
-
-    private String resolveMessage(VisitorFlowState state) {
-        if (state.getScreen() == VisitorFlowState.Screen.LOADING && !state.isShowingCachedContacts()) {
-            return "";
+    private void maybeShowSuccessToast(VisitorContactUiState state) {
+        if (state.isSuccess() && state.getSuccessMessage() != null && !state.getSuccessMessage().trim().isEmpty()) {
+            Toast.makeText(this, state.getSuccessMessage(), Toast.LENGTH_SHORT).show();
         }
-        if (state.getScreen() == VisitorFlowState.Screen.SUCCESS) {
-            return "";
-        }
-        if (state.getScreen() == VisitorFlowState.Screen.SUBMITTING && state.getSelectedContactId() != null) {
-            for (VisitorDtos.ContactSummary contact : state.getContacts()) {
-                if (state.getSelectedContactId().equals(contact.getId())) {
-                    return getString(R.string.visitor_flow_submitting, contact.getDisplayName());
-                }
-            }
-        }
-        if (state.getScreen() == VisitorFlowState.Screen.READY && state.isShowingCachedContacts()) {
-            return getString(R.string.visitor_flow_ready);
-        }
-        if (state.getScreen() == VisitorFlowState.Screen.MAINTENANCE) {
-            return "";
-        }
-        return state.getMessage();
-    }
-
-    private void maybeShowSuccessToast(VisitorFlowState state) {
-        if (state.getScreen() == VisitorFlowState.Screen.SUCCESS
-                && lastRenderedScreen != VisitorFlowState.Screen.SUCCESS
-                && state.getMessage() != null
-                && !state.getMessage().trim().isEmpty()) {
-            Toast.makeText(this, state.getMessage(), Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private String resolveCacheHint(VisitorFlowState state) {
-        if (!state.isShowingCachedContacts() || state.getScreen() == VisitorFlowState.Screen.MAINTENANCE) {
-            return "";
-        }
-        if (state.getScreen() == VisitorFlowState.Screen.LOADING) {
-            return getString(R.string.visitor_flow_cache_hint_loading);
-        }
-        if (state.getScreen() == VisitorFlowState.Screen.READY) {
-            return getString(R.string.visitor_flow_cache_hint_retry);
-        }
-        return getString(R.string.visitor_flow_cache_hint_loading);
     }
 
     private void bindContacts(List<VisitorDtos.ContactSummary> contacts) {
@@ -322,16 +283,20 @@ public class VisitorContactActivity extends TopBaseActivity implements VisitorFl
                 .create();
 
         dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
-            String normalizedVisitorName = VisitorNameNormalizer.normalizeOrNull(input.getText().toString());
-            if (normalizedVisitorName == null) {
+            if (!viewModel.onVisitorNameProvided(contact, input.getText().toString())) {
                 input.setError(getString(R.string.visitor_name_required));
                 return;
             }
-            visitorName = normalizedVisitorName;
+            visitorName = VisitorNameNormalizer.normalizeOrNull(input.getText().toString());
             dialog.dismiss();
-            presenter.onContactSelected(contact, normalizedVisitorName);
         }));
         dialog.show();
+    }
+
+    private void handleEvent(VisitorContactUiEvent event) {
+        if (event.getType() == VisitorContactUiEvent.Type.PROMPT_VISITOR_NAME) {
+            promptVisitorName(event.getContact(), false);
+        }
     }
 
     private void returnToBase() {

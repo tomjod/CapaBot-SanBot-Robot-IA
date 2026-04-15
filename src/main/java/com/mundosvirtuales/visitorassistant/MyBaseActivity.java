@@ -25,6 +25,16 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.gson.Gson;
+import com.mundosvirtuales.visitorassistant.app.visitor.VisitorActivityLauncher;
+import com.mundosvirtuales.visitorassistant.features.visitor.application.BatteryMonitor;
+import com.mundosvirtuales.visitorassistant.features.visitor.application.VisitorEntryCoordinator;
+import com.mundosvirtuales.visitorassistant.features.visitor.application.WanderController;
+import com.mundosvirtuales.visitorassistant.features.visitor.domain.BatteryStatusSnapshot;
+import com.mundosvirtuales.visitorassistant.features.visitor.domain.VisitorEntryPlan;
+import com.mundosvirtuales.visitorassistant.features.visitor.domain.VisitorEntryRequest;
+import com.mundosvirtuales.visitorassistant.features.visitor.domain.VisitorEntryScript;
+import com.mundosvirtuales.visitorassistant.infra.robot.RobotHardwareFacade;
+import com.mundosvirtuales.visitorassistant.infra.robot.SanbotRobotHardwareFacade;
 import com.mundosvirtuales.visitorassistant.visitorflow.VisitorFlowEntryDecider;
 import com.mundosvirtuales.visitorassistant.visitorflow.VisitorStartActivity;
 import com.mundosvirtuales.visitorassistant.video.VisionMediaDecoder;
@@ -139,6 +149,10 @@ public class  MyBaseActivity extends TopBaseActivity implements SurfaceHolder.Ca
     private HardWareManager hardWareManager; //leds //touch sensors //voice locate //gyroscope
     private ModularMotionManager modularMotionManager; //wander
     private WheelMotionManager wheelMotionManager;
+    private RobotHardwareFacade robotHardwareFacade;
+    private final VisitorEntryCoordinator visitorEntryCoordinator = new VisitorEntryCoordinator();
+    private final BatteryMonitor batteryMonitor = new BatteryMonitor();
+    private final WanderController wanderController = new WanderController();
 
     //video stuff
     private VisionMediaDecoder mediaDecoder;
@@ -207,6 +221,7 @@ public class  MyBaseActivity extends TopBaseActivity implements SurfaceHolder.Ca
         systemManager = (SystemManager) getUnitManager(FuncConstant.SYSTEM_MANAGER);
         modularMotionManager = (ModularMotionManager) getUnitManager(FuncConstant.MODULARMOTION_MANAGER);
         wheelMotionManager = (WheelMotionManager) getUnitManager(FuncConstant.WHEELMOTION_MANAGER);
+        robotHardwareFacade = new SanbotRobotHardwareFacade(modularMotionManager, systemManager);
         //for video view on screen
         svMedia.getHolder().addCallback(this);
         mediaDecoder = new VisionMediaDecoder();
@@ -258,16 +273,19 @@ public class  MyBaseActivity extends TopBaseActivity implements SurfaceHolder.Ca
             @Override
             public void run() {
                 updateView();
-                //grab battery value
-                int battery_value = systemManager.getBatteryValue();
+                BatteryStatusSnapshot batterySnapshot = robotHardwareFacade.readBatteryStatus();
+                int battery_value = batterySnapshot.getBatteryValue();
                 Log.i("IGOR-BAS-BAT", "Battery: "+ battery_value);
-                //if battery connected deactivate autocharge
-                if (systemManager.getBatteryStatus() == systemManager.STATUS_CHARGE_LINE || systemManager.getBatteryStatus() == systemManager.STATUS_CHARGE_PILE) {
+                if (batteryMonitor.isCharging(batterySnapshot, systemManager.STATUS_CHARGE_LINE, systemManager.STATUS_CHARGE_PILE)) {
                     MySettings.setAutoChargeAllowed(false);
                     Log.i("IGOR-BAS-BAT", "Battery charging already with line or charge pile");
                 }
-                //check if the charge is low
-                if (MySettings.isAutoChargeAllowed() && (battery_value <= MySettings.getBatteryLOW())) {
+                if (batteryMonitor.shouldStartCharging(
+                        MySettings.isAutoChargeAllowed(),
+                        batterySnapshot,
+                        MySettings.getBatteryLOW(),
+                        systemManager.STATUS_CHARGE_LINE,
+                        systemManager.STATUS_CHARGE_PILE)) {
                     //starts charge activity
                     Intent myIntent = new Intent(MyBaseActivity.this, MyChargeActivity.class);
                     MyBaseActivity.this.startActivity(myIntent);
@@ -754,78 +772,45 @@ public class  MyBaseActivity extends TopBaseActivity implements SurfaceHolder.Ca
     }
 
     public void startInteraction(String person_name) {
-        if (!busy && MyApp.botReady) {
-            Log.i(TAG, "START INTERACTION! now busy");
-            //starts greeting with this person passing
-            busy = true;
-            //say hi
-            speechManager.startSpeak(buildGreeting(person_name), MySettings.getSpeakDefaultOption());
+        VisitorEntryPlan plan = visitorEntryCoordinator.createPlan(
+                new VisitorEntryRequest(
+                        busy,
+                        MyApp.botReady,
+                        person_name,
+                        BuildConfig.VISITOR_FLOW_ENABLED,
+                        BuildConfig.VISITOR_API_BASE_URL,
+                        Calendar.getInstance().get(Calendar.HOUR_OF_DAY),
+                        Math.random()
+                ),
+                new VisitorEntryScript(
+                        getString(R.string.hi),
+                        getString(R.string.visitor_flow_entry_generic),
+                        getString(R.string.visitor_flow_entry_named),
+                        getString(R.string.early_morning),
+                        getString(R.string.morning),
+                        getString(R.string.afternoon),
+                        getString(R.string.night)
+                )
+        );
+
+        if (!plan.shouldStart()) {
+            return;
+        }
+
+        Log.i(TAG, "START INTERACTION! now busy");
+        busy = true;
+        for (String spokenMessage : plan.getSpokenMessages()) {
+            speechManager.startSpeak(spokenMessage, MySettings.getSpeakDefaultOption());
             concludeSpeak(speechManager);
-
-            // 50% say Good morning/afternoon/ecc...
-            double random_num = Math.random();
-            if (random_num < 0.5) {
-                int hours = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
-                if (hours < 6) {
-                    speechManager.startSpeak(getString(R.string.early_morning), MySettings.getSpeakDefaultOption());
-                } else if (hours < 12) {
-                    speechManager.startSpeak(getString(R.string.morning), MySettings.getSpeakDefaultOption());
-                } else if (hours < 18) {
-                    speechManager.startSpeak(getString(R.string.afternoon), MySettings.getSpeakDefaultOption());
-                } else if (hours <= 24) {
-                    speechManager.startSpeak(getString(R.string.night), MySettings.getSpeakDefaultOption());
-                }
-                concludeSpeak(speechManager);
-            }
-
-            VisitorFlowEntryDecider.EntryTarget entryTarget = resolveEntryTarget();
-
-            if (entryTarget == VisitorFlowEntryDecider.EntryTarget.GUIDED_VISITOR_FLOW) {
-                speechManager.startSpeak(buildVisitorFlowIntro(person_name), MySettings.getSpeakDefaultOption());
-                concludeSpeak(speechManager);
-            }
-
-            //start the dialog activity.
-            Intent myIntent;
-            if (entryTarget == VisitorFlowEntryDecider.EntryTarget.GUIDED_VISITOR_FLOW) {
-                myIntent = VisitorStartActivity.createIntent(MyBaseActivity.this, person_name);
-            } else {
-                myIntent = MyDialogActivity.createLegacyIntent(MyBaseActivity.this, person_name);
-            }
-            MyBaseActivity.this.startActivity(myIntent);
-            //terminate this activity
-            finish();
         }
-    }
 
-    private boolean shouldUseVisitorFlow() {
-        return resolveEntryTarget() == VisitorFlowEntryDecider.EntryTarget.GUIDED_VISITOR_FLOW;
-    }
-
-    private VisitorFlowEntryDecider.EntryTarget resolveEntryTarget() {
-        return VisitorFlowEntryDecider.resolve(BuildConfig.VISITOR_FLOW_ENABLED, BuildConfig.VISITOR_API_BASE_URL);
-    }
-
-    private String buildGreeting(String personName) {
-        if (personName == null) {
-            return getString(R.string.hi);
-        }
-        String normalized = personName.trim();
-        if (normalized.isEmpty()) {
-            return getString(R.string.hi);
-        }
-        return getString(R.string.hi) + ", " + normalized;
-    }
-
-    private String buildVisitorFlowIntro(String personName) {
-        if (personName == null) {
-            return getString(R.string.visitor_flow_entry_generic);
-        }
-        String normalized = personName.trim();
-        if (normalized.isEmpty()) {
-            return getString(R.string.visitor_flow_entry_generic);
-        }
-        return getString(R.string.visitor_flow_entry_named, normalized);
+        Intent myIntent = VisitorActivityLauncher.createInteractionIntent(
+                MyBaseActivity.this,
+                plan.getTarget(),
+                plan.getNormalizedVisitorName()
+        );
+        MyBaseActivity.this.startActivity(myIntent);
+        finish();
     }
 
 
@@ -839,8 +824,9 @@ public class  MyBaseActivity extends TopBaseActivity implements SurfaceHolder.Ca
                         Toast.makeText(MyBaseActivity.this, "Wander " + MySettings.isWanderAllowed()+" now", Toast.LENGTH_SHORT).show();
                     }
                 });}
-            modularMotionManager.switchWander(MySettings.isWanderAllowed());
-            Log.i(TAG, "Wander " + MySettings.isWanderAllowed() + " now");
+            boolean enableWander = wanderController.shouldEnableWander(busy, MySettings.isWanderAllowed());
+            robotHardwareFacade.setWanderEnabled(enableWander);
+            Log.i(TAG, "Wander " + enableWander + " now");
         }
     }
 
@@ -852,7 +838,7 @@ public class  MyBaseActivity extends TopBaseActivity implements SurfaceHolder.Ca
                     Toast.makeText(MyBaseActivity.this, "Wander off now", Toast.LENGTH_SHORT).show();
                 }
             });}
-        modularMotionManager.switchWander(false);
+        robotHardwareFacade.setWanderEnabled(false);
         Log.i(TAG, "Wander forced off now");
     }
 
@@ -877,7 +863,7 @@ public class  MyBaseActivity extends TopBaseActivity implements SurfaceHolder.Ca
         String handshakesStr = getString(R.string.handshakes) + " " + MySettings.getHandshakes();
         handshakesTextView.setText(handshakesStr);
         //battery
-        int battery_value = systemManager.getBatteryValue();
+        int battery_value = robotHardwareFacade.readBatteryStatus().getBatteryValue();
         batteryTV.setText("Battery: " + battery_value + "%");
     }
 

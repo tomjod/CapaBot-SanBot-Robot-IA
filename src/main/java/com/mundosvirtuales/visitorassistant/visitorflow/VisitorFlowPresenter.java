@@ -176,12 +176,6 @@ public class VisitorFlowPresenter {
                         ? safeSubmissionMessage(result.getDetail())
                         : failedMessage;
                 boolean retryable = result != null && result.isRetryable();
-                if (retryable && shouldSwitchToMaintenance(result != null ? result.getDetail() : null)) {
-                    currentState = VisitorFlowState.maintenance(maintenanceMessage, true);
-                    view.render(currentState);
-                    robotSpeechPort.speak(currentState.getMessage());
-                    return;
-                }
                 currentState = VisitorFlowState.failed(contacts, message, retryable, contact.getId());
                 view.render(currentState);
                 robotSpeechPort.speak(message);

@@ -13,9 +13,14 @@ import android.widget.TextView;
 import com.mundosvirtuales.visitorassistant.BuildConfig;
 import com.mundosvirtuales.visitorassistant.MyBaseActivity;
 import com.mundosvirtuales.visitorassistant.R;
+import com.mundosvirtuales.visitorassistant.app.visitor.VisitorActivityLauncher;
+import com.mundosvirtuales.visitorassistant.features.visitor.presentation.start.VisitorStartUiEvent;
+import com.mundosvirtuales.visitorassistant.features.visitor.presentation.start.VisitorStartUiState;
+import com.mundosvirtuales.visitorassistant.features.visitor.presentation.start.VisitorStartViewModel;
+import com.mundosvirtuales.visitorassistant.infra.api.VisitorApiAvailabilityGateway;
 import com.sanbot.opensdk.base.TopBaseActivity;
 
-public class VisitorStartActivity extends TopBaseActivity implements VisitorLauncherPresenter.View {
+public class VisitorStartActivity extends TopBaseActivity {
 
     private static final String EXTRA_VISITOR_NAME = "name";
 
@@ -29,8 +34,8 @@ public class VisitorStartActivity extends TopBaseActivity implements VisitorLaun
     private TextView maintenanceTitleView;
     private TextView maintenanceMessageView;
     private Button maintenanceRetryButton;
-    private VisitorLauncherPresenter presenter;
-    private VisitorLauncherState currentState = VisitorLauncherState.checking("");
+    private VisitorStartViewModel viewModel;
+    private VisitorStartUiState currentState = VisitorStartUiState.checking("");
     private VisitorIdleHomeController idleHomeController;
 
     public static Intent createIntent(android.content.Context context, String visitorName) {
@@ -65,26 +70,27 @@ public class VisitorStartActivity extends TopBaseActivity implements VisitorLaun
                 BuildConfig.VISITOR_LOCATION_LABEL,
                 getString(R.string.visitor_flow_configuration_error)
         );
-        presenter = new VisitorLauncherPresenter(
-                this,
-                apiClient,
+        viewModel = new VisitorStartViewModel(
+                new VisitorApiAvailabilityGateway(apiClient),
                 getString(R.string.visitor_start_checking),
-                getString(R.string.visitor_start_maintenance_message)
+                getString(R.string.visitor_start_maintenance_message),
+                buildVisitorName()
         );
+        viewModel.observe(this::render, this::handleEvent);
 
-        talkButton.setOnClickListener(view -> route(VisitorStartNavigation.VisitReason.TALK_TO_PERSON));
-        leaveMessageButton.setOnClickListener(view -> route(VisitorStartNavigation.VisitReason.LEAVE_MESSAGE));
-        requestInformationButton.setOnClickListener(view -> route(VisitorStartNavigation.VisitReason.REQUEST_INFORMATION));
+        talkButton.setOnClickListener(view -> viewModel.onVisitReasonSelected(VisitorStartNavigation.VisitReason.TALK_TO_PERSON));
+        leaveMessageButton.setOnClickListener(view -> viewModel.onVisitReasonSelected(VisitorStartNavigation.VisitReason.LEAVE_MESSAGE));
+        requestInformationButton.setOnClickListener(view -> viewModel.onVisitReasonSelected(VisitorStartNavigation.VisitReason.REQUEST_INFORMATION));
         legacyBaseLink.setPaintFlags(legacyBaseLink.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
-        legacyBaseLink.setOnClickListener(view -> route(VisitorStartNavigation.VisitReason.LEGACY_BASE));
-        maintenanceRetryButton.setOnClickListener(view -> presenter.onRetry());
+        legacyBaseLink.setOnClickListener(view -> viewModel.onVisitReasonSelected(VisitorStartNavigation.VisitReason.LEGACY_BASE));
+        maintenanceRetryButton.setOnClickListener(view -> viewModel.onRetry());
 
         VisitorFlowLogger.info(
                 "launcher.activityCreated",
                 "visitorName=" + buildVisitorName() + ", apiBaseUrl=" + BuildConfig.VISITOR_API_BASE_URL + ", deviceId=" + BuildConfig.VISITOR_DEVICE_ID
         );
 
-        presenter.start();
+        viewModel.start();
     }
 
     @Override
@@ -111,12 +117,11 @@ public class VisitorStartActivity extends TopBaseActivity implements VisitorLaun
         return super.dispatchTouchEvent(ev);
     }
 
-    @Override
-    public void render(VisitorLauncherState state) {
+    public void render(VisitorStartUiState state) {
         runOnUiThread(() -> {
             currentState = state;
-            boolean maintenance = state.getScreen() == VisitorLauncherState.Screen.MAINTENANCE;
-            boolean checking = state.getScreen() == VisitorLauncherState.Screen.CHECKING;
+            boolean maintenance = state.getScreen() == VisitorStartUiState.Screen.MAINTENANCE;
+            boolean checking = state.getScreen() == VisitorStartUiState.Screen.CHECKING;
             boolean receptionEnabled = state.isReceptionAccessEnabled();
             boolean informationEnabled = state.isInformationAccessEnabled();
             boolean legacyEnabled = state.isLegacyAccessEnabled();
@@ -151,57 +156,9 @@ public class VisitorStartActivity extends TopBaseActivity implements VisitorLaun
         });
     }
 
-    private void route(VisitorStartNavigation.VisitReason visitReason) {
-        if (currentState == null) {
-            VisitorFlowLogger.warn("launcher.route.blocked", "reason=" + visitReason + ", currentState=null");
-            return;
-        }
-
-        VisitorStartNavigation.Target target = VisitorStartNavigation.resolveTarget(visitReason);
-        VisitorFlowLogger.info("launcher.route.request", "reason=" + visitReason + ", target=" + target + ", screen=" + currentState.getScreen());
-
-        if (target == VisitorStartNavigation.Target.CONTACT_FLOW
-                || target == VisitorStartNavigation.Target.MESSAGE_FLOW) {
-            if (!currentState.isReceptionAccessEnabled()) {
-                VisitorFlowLogger.warn("launcher.route.blocked", "reason=" + visitReason + ", target=" + target + ", receptionAccess=false");
-                return;
-            }
-        }
-
-        if (target == VisitorStartNavigation.Target.INFORMATION_FLOW
-                && !currentState.isInformationAccessEnabled()) {
-            VisitorFlowLogger.warn("launcher.route.blocked", "reason=" + visitReason + ", target=" + target + ", informationAccess=false");
-            return;
-        }
-
-        if (target == VisitorStartNavigation.Target.LEGACY_BASE
-                && !currentState.isLegacyAccessEnabled()) {
-            VisitorFlowLogger.warn("launcher.route.blocked", "reason=" + visitReason + ", target=" + target + ", legacyAccess=false");
-            return;
-        }
-
-        if (target == VisitorStartNavigation.Target.CONTACT_FLOW) {
-            startActivity(VisitorContactActivity.createIntent(this, buildVisitorName()));
-            finish();
-            return;
-        }
-
-        if (target == VisitorStartNavigation.Target.MESSAGE_FLOW) {
-            startActivity(VisitorLeaveMessageActivity.createIntent(this, buildVisitorName()));
-            finish();
-            return;
-        }
-
-        if (target == VisitorStartNavigation.Target.INFORMATION_FLOW) {
-            startActivity(VisitorInformationActivity.createIntent(this));
-            finish();
-            return;
-        }
-
-        if (target == VisitorStartNavigation.Target.LEGACY_BASE) {
-            startActivity(MyBaseActivity.createIntentFromVisitorStart(this));
-            finish();
-        }
+    private void handleEvent(VisitorStartUiEvent event) {
+        startActivity(VisitorActivityLauncher.createIntent(this, event));
+        finish();
     }
 
     private String buildVisitorName() {

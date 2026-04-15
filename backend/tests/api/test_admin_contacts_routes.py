@@ -5,16 +5,29 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-
 from backend.app.api.routes.admin_contacts import register_admin_contacts_routes
+from backend.app.presentation.http.admin_contacts_router import (
+    register_admin_contacts_routes as presentation_register_admin_contacts_routes,
+)
 from backend.app.infra.json_contacts import JsonContactRepository
 from backend.app.infra.json_pending_registrations import JsonPendingTelegramRegistrationRepository
 
+try:
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+except ModuleNotFoundError:  # pragma: no cover - environment-dependent dependency gate
+    FastAPI = None
+    TestClient = None
+
 
 class AdminContactsRoutesTest(unittest.TestCase):
+    def test_legacy_module_bridges_to_presentation_router_contracts(self) -> None:
+        self.assertIs(register_admin_contacts_routes, presentation_register_admin_contacts_routes)
+
     def setUp(self) -> None:
+        if FastAPI is None or TestClient is None:
+            self.skipTest("FastAPI test dependencies are not installed in this environment")
+
         self.temp_dir = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp_dir.cleanup)
         self.file_path = Path(self.temp_dir.name) / "contacts.json"
@@ -76,6 +89,12 @@ class AdminContactsRoutesTest(unittest.TestCase):
         self.assertIn("Empresa", response.text)
         self.assertIn("Disponible", response.text)
         self.assertNotIn("Telegram Chat ID", response.text)
+
+    def test_admin_page_does_not_treat_request_as_query_param(self) -> None:
+        response = self.client.get("/admin/contacts")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn('"query","request"', response.text)
 
     def test_admin_page_renders_pending_registration_requests(self) -> None:
         response = self.client.get("/admin/contacts")

@@ -6,6 +6,11 @@ from datetime import datetime, timezone
 from backend.app.domain.contact import Contact
 from backend.app.domain.notification import NotificationRequest
 from backend.app.infra.providers.email_provider import MailtrapEmailProvider, SmtpEmailProvider, StubEmailProvider
+from backend.app.infrastructure.providers.email_provider import (
+    MailtrapEmailProvider as InfrastructureMailtrapEmailProvider,
+    SmtpEmailProvider as InfrastructureSmtpEmailProvider,
+    StubEmailProvider as InfrastructureStubEmailProvider,
+)
 
 
 class RecordingSmtpClient:
@@ -33,6 +38,11 @@ class RecordingMailtrapClient:
 
 
 class EmailProviderTest(unittest.TestCase):
+    def test_legacy_module_bridges_to_infrastructure_provider(self) -> None:
+        self.assertIs(MailtrapEmailProvider, InfrastructureMailtrapEmailProvider)
+        self.assertIs(SmtpEmailProvider, InfrastructureSmtpEmailProvider)
+        self.assertIs(StubEmailProvider, InfrastructureStubEmailProvider)
+
     def _contact(self) -> Contact:
         return Contact(
             id="ventas-1",

@@ -7,9 +7,18 @@ from pathlib import Path
 
 from backend.app.domain.telegram_onboarding import PendingTelegramRegistration
 from backend.app.infra.json_pending_registrations import JsonPendingTelegramRegistrationRepository
+from backend.app.infrastructure.json.pending_registrations_repository import (
+    JsonPendingTelegramRegistrationRepository as InfrastructureJsonPendingTelegramRegistrationRepository,
+)
 
 
 class JsonPendingTelegramRegistrationRepositoryTest(unittest.TestCase):
+    def test_legacy_module_bridges_to_infrastructure_repository(self) -> None:
+        self.assertIs(
+            JsonPendingTelegramRegistrationRepository,
+            InfrastructureJsonPendingTelegramRegistrationRepository,
+        )
+
     def _repository(self, payload: list[dict[str, object]] | None = None) -> JsonPendingTelegramRegistrationRepository:
         temp_dir = tempfile.TemporaryDirectory()
         self.addCleanup(temp_dir.cleanup)

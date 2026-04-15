@@ -1,12 +1,11 @@
 package com.mundosvirtuales.visitorassistant.visitorflow;
 
-import android.text.TextUtils;
 import android.util.Log;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-final class VisitorFlowLogger {
+public final class VisitorFlowLogger {
 
     private static final String TAG = "VisitorFlow";
     private static final AtomicLong REQUEST_COUNTER = new AtomicLong(1000L);
@@ -14,37 +13,49 @@ final class VisitorFlowLogger {
     private VisitorFlowLogger() {
     }
 
-    static long nextRequestId() {
+    public static long nextRequestId() {
         return REQUEST_COUNTER.incrementAndGet();
     }
 
-    static void info(String event, String details) {
-        Log.i(TAG, buildMessage(event, details));
+    public static void info(String event, String details) {
+        try {
+            Log.i(TAG, buildMessage(event, details));
+        } catch (RuntimeException ignored) {
+            // Android stubs throw in local JVM tests; logging must never break visitor flows.
+        }
     }
 
-    static void warn(String event, String details) {
-        Log.w(TAG, buildMessage(event, details));
+    public static void warn(String event, String details) {
+        try {
+            Log.w(TAG, buildMessage(event, details));
+        } catch (RuntimeException ignored) {
+            // Android stubs throw in local JVM tests; logging must never break visitor flows.
+        }
     }
 
-    static void error(String event, String details, Throwable throwable) {
-        Log.e(TAG, buildMessage(event, details), throwable);
+    public static void error(String event, String details, Throwable throwable) {
+        try {
+            Log.e(TAG, buildMessage(event, details), throwable);
+        } catch (RuntimeException ignored) {
+            // Android stubs throw in local JVM tests; logging must never break visitor flows.
+        }
     }
 
-    static String summarizeBaseConfig(String baseUrl, String deviceId, String location, String defaultVisitorName) {
+    public static String summarizeBaseConfig(String baseUrl, String deviceId, String location, String defaultVisitorName) {
         return "baseUrl=" + safe(baseUrl)
                 + ", deviceId=" + safe(deviceId)
                 + ", location=" + safe(location)
                 + ", defaultVisitorName=" + safe(defaultVisitorName);
     }
 
-    static String summarizeContacts(List<VisitorDtos.ContactSummary> contacts) {
+    public static String summarizeContacts(List<VisitorDtos.ContactSummary> contacts) {
         if (contacts == null) {
             return "contacts=null";
         }
         return "contacts=" + contacts.size();
     }
 
-    static String summarizeContact(VisitorDtos.ContactSummary contact) {
+    public static String summarizeContact(VisitorDtos.ContactSummary contact) {
         if (contact == null) {
             return "contact=null";
         }
@@ -53,7 +64,7 @@ final class VisitorFlowLogger {
                 + ", available=" + contact.isAvailable();
     }
 
-    static String summarizeNotification(VisitorDtos.NotificationRequestDto request) {
+    public static String summarizeNotification(VisitorDtos.NotificationRequestDto request) {
         if (request == null) {
             return "notificationRequest=null";
         }
@@ -62,7 +73,7 @@ final class VisitorFlowLogger {
                 + ", visitorName=" + safe(request.visitorName)
                 + ", location=" + safe(request.location)
                 + ", reason=" + safe(request.reason)
-                + ", hasMessage=" + !TextUtils.isEmpty(request.message);
+                + ", hasMessage=" + !isNullOrEmpty(request.message);
     }
 
     private static String buildMessage(String event, String details) {
@@ -70,9 +81,13 @@ final class VisitorFlowLogger {
     }
 
     private static String safe(String value) {
-        if (TextUtils.isEmpty(value)) {
+        if (isNullOrEmpty(value)) {
             return "<empty>";
         }
         return value;
+    }
+
+    private static boolean isNullOrEmpty(String value) {
+        return value == null || value.length() == 0;
     }
 }

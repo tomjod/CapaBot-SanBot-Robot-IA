@@ -2,8 +2,25 @@ from __future__ import annotations
 
 import unittest
 
+from backend.app.application.telegram_onboarding_service import (
+    select_company_response,
+    submit_job_title_response,
+    submit_telegram_onboarding_response,
+)
+from backend.app.bot.application import (
+    LocalTelegramOnboardingClient,
+    create_telegram_onboarding_application,
+)
 from backend.app.bot.service import HELP_BUTTON_TEXT, SHARE_CONTACT_BUTTON_TEXT, TelegramActor, TelegramBotFlowService
 from backend.app.domain.contact import Contact
+from backend.app.domain.telegram_onboarding import (
+    PendingTelegramRegistration,
+    TelegramOnboardingResult,
+)
+from backend.app.presentation.telegram.application import (
+    LocalTelegramOnboardingClient as PresentationLocalTelegramOnboardingClient,
+    create_telegram_onboarding_application as create_presentation_telegram_onboarding_application,
+)
 
 
 class StubContactLookup:
@@ -35,6 +52,91 @@ class StubOnboardingClient:
     def submit_job_title(self, payload: dict) -> tuple[int, dict]:
         self.job_title_payloads.append(payload)
         return self.status_code, {"status": "pending_registration_ready"}
+
+
+class StubTelegramOnboardingApplicationService:
+    def onboard(self, request):
+        return TelegramOnboardingResult(
+            status="matched",
+            detail="Contacto Ada vinculado correctamente a Telegram.",
+            normalized_phone="56912345678",
+            contact=Contact(
+                id="ventas",
+                display_name="Ada Lovelace",
+                job_title="Recepción",
+                company="transformapp",
+                telegram_chat_id="555",
+                telegram_user_id="444",
+                telegram_username="ventas_contacto",
+            ),
+        )
+
+    def select_company(self, request):
+        return TelegramOnboardingResult(
+            status="awaiting_job_title",
+            detail="Perfecto. Ahora escribí tu cargo para completar el preregistro.",
+            normalized_phone="56900000000",
+            pending_registration=PendingTelegramRegistration(
+                phone_number="+56 9 0000 0000",
+                normalized_phone="56900000000",
+                telegram_user_id=request.telegram_user_id,
+                telegram_chat_id="555",
+                company=request.company,
+                flow_state="awaiting_job_title",
+                created_at="2026-04-13T12:00:00Z",
+            ),
+        )
+
+    def submit_job_title(self, request):
+        return TelegramOnboardingResult(
+            status="pending_registration_ready",
+            detail="Gracias. Tu preregistro quedó completo y será revisado por un administrador.",
+            normalized_phone="56900000000",
+            pending_registration=PendingTelegramRegistration(
+                phone_number="+56 9 0000 0000",
+                normalized_phone="56900000000",
+                telegram_user_id=request.telegram_user_id,
+                telegram_chat_id="555",
+                company="transformapp",
+                job_title=request.job_title,
+                flow_state="ready_for_approval",
+                created_at="2026-04-13T12:00:00Z",
+            ),
+        )
+
+
+class LocalTelegramOnboardingClientContractTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.service = StubTelegramOnboardingApplicationService()
+        self.client = LocalTelegramOnboardingClient(self.service)
+
+    def test_legacy_module_bridges_to_presentation_telegram_application(self) -> None:
+        self.assertIs(LocalTelegramOnboardingClient, PresentationLocalTelegramOnboardingClient)
+        self.assertIs(
+            create_telegram_onboarding_application,
+            create_presentation_telegram_onboarding_application,
+        )
+
+    def test_submit_uses_shared_application_contract(self) -> None:
+        payload = {
+            "phone_number": "+56 9 1234 5678",
+            "telegram_user_id": "444",
+            "telegram_chat_id": "555",
+            "telegram_username": "ventas_contacto",
+            "first_name": "Ada",
+        }
+
+        self.assertEqual(self.client.submit(payload), submit_telegram_onboarding_response(self.service, payload))
+
+    def test_select_company_uses_shared_application_contract(self) -> None:
+        payload = {"telegram_user_id": "444", "company": "transformapp"}
+
+        self.assertEqual(self.client.select_company(payload), select_company_response(self.service, payload))
+
+    def test_submit_job_title_uses_shared_application_contract(self) -> None:
+        payload = {"telegram_user_id": "444", "job_title": "Recepcionista"}
+
+        self.assertEqual(self.client.submit_job_title(payload), submit_job_title_response(self.service, payload))
 
 
 class TelegramBotFlowServiceTest(unittest.TestCase):

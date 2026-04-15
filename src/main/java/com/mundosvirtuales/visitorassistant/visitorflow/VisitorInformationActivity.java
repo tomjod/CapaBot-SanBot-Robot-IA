@@ -14,6 +14,11 @@ import android.widget.TextView;
 
 import com.mundosvirtuales.visitorassistant.MySettings;
 import com.mundosvirtuales.visitorassistant.R;
+import com.mundosvirtuales.visitorassistant.features.visitor.presentation.information.VisitorInformationUiEvent;
+import com.mundosvirtuales.visitorassistant.features.visitor.presentation.information.VisitorInformationUiState;
+import com.mundosvirtuales.visitorassistant.features.visitor.presentation.information.VisitorInformationViewModel;
+import com.mundosvirtuales.visitorassistant.features.visitor.ui.VisitorInformationOptionItem;
+import com.mundosvirtuales.visitorassistant.infra.legacy.LegacyVisitorInformationCatalogSource;
 import com.sanbot.opensdk.base.TopBaseActivity;
 import com.sanbot.opensdk.beans.FuncConstant;
 import com.sanbot.opensdk.function.unit.SpeechManager;
@@ -24,18 +29,18 @@ import static com.mundosvirtuales.visitorassistant.MyUtils.concludeSpeak;
 
 public class VisitorInformationActivity extends TopBaseActivity {
 
-    private final java.util.List<View> optionViews = new java.util.ArrayList<>();
-
     public static Intent createIntent(Context context) {
         return new Intent(context, VisitorInformationActivity.class);
     }
 
     private SpeechManager speechManager;
+    private LinearLayout optionsContainer;
     private ImageView detailLogoView;
     private TextView detailTitleView;
     private TextView detailSummaryView;
     private TextView detailView;
     private VisitorIdleHomeController idleHomeController;
+    private VisitorInformationViewModel viewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,7 +52,7 @@ public class VisitorInformationActivity extends TopBaseActivity {
         idleHomeController = new VisitorIdleHomeController(this, 45000L);
         speechManager = (SpeechManager) getUnitManager(FuncConstant.SPEECH_MANAGER);
 
-        LinearLayout optionsContainer = findViewById(R.id.visitorInformationOptions);
+        optionsContainer = findViewById(R.id.visitorInformationOptions);
         detailLogoView = findViewById(R.id.visitorInformationDetailLogo);
         detailTitleView = findViewById(R.id.visitorInformationDetailTitle);
         detailSummaryView = findViewById(R.id.visitorInformationDetailSummary);
@@ -55,7 +60,8 @@ public class VisitorInformationActivity extends TopBaseActivity {
         Button talkButton = findViewById(R.id.visitorInformationTalk);
         Button backButton = findViewById(R.id.visitorInformationBack);
 
-        bindOptions(optionsContainer, VisitorInformationCatalog.buildDefault(this));
+        viewModel = new VisitorInformationViewModel(new LegacyVisitorInformationCatalogSource(this));
+        viewModel.observe(this::render, this::handleEvent);
 
         talkButton.setOnClickListener(view -> {
             startActivity(VisitorContactActivity.createIntent(this, null));
@@ -65,13 +71,29 @@ public class VisitorInformationActivity extends TopBaseActivity {
             startActivity(new Intent(this, VisitorStartActivity.class));
             finish();
         });
+
+        viewModel.start();
     }
 
-    private void bindOptions(LinearLayout container, List<VisitorInformationCatalog.Option> options) {
+    public void render(VisitorInformationUiState state) {
+        runOnUiThread(() -> {
+            bindOptions(optionsContainer, state.getOptions(), state.getSelectedOptionId());
+            detailLogoView.setImageResource(state.getSelectedLogoResId());
+            if (state.getSelectedTitle() == null || state.getSelectedTitle().trim().isEmpty()) {
+                detailLogoView.setContentDescription(null);
+            } else {
+                detailLogoView.setContentDescription(getString(R.string.visitor_information_logo_item_content_description, state.getSelectedTitle()));
+            }
+            detailTitleView.setText(state.getSelectedTitle());
+            detailSummaryView.setText(state.getSelectedSummary());
+            detailView.setText(state.getSelectedDetail());
+        });
+    }
+
+    private void bindOptions(LinearLayout container, List<VisitorInformationOptionItem> options, String selectedOptionId) {
         container.removeAllViews();
-        optionViews.clear();
         LayoutInflater inflater = LayoutInflater.from(this);
-        for (VisitorInformationCatalog.Option option : options) {
+        for (VisitorInformationOptionItem option : options) {
             View optionView = inflater.inflate(R.layout.item_visitor_information_option, container, false);
             ImageView logoView = optionView.findViewById(R.id.visitorInformationOptionLogo);
             TextView titleView = optionView.findViewById(R.id.visitorInformationOptionTitle);
@@ -82,28 +104,15 @@ public class VisitorInformationActivity extends TopBaseActivity {
             titleView.setText(option.getTitle());
             summaryView.setText(option.getSummary());
 
-            optionView.setOnClickListener(view -> showDetail(option, view));
-            optionViews.add(optionView);
+            optionView.setActivated(option.getId().equals(selectedOptionId));
+            optionView.setOnClickListener(view -> viewModel.onOptionSelected(option.getId()));
             container.addView(optionView);
-        }
-
-        if (!options.isEmpty() && !optionViews.isEmpty()) {
-            showDetail(options.get(0), optionViews.get(0));
         }
     }
 
-    private void showDetail(VisitorInformationCatalog.Option option, View selectedView) {
-        for (View optionView : optionViews) {
-            optionView.setActivated(optionView == selectedView);
-        }
-
-        detailLogoView.setImageResource(option.getLogoResId());
-        detailLogoView.setContentDescription(getString(R.string.visitor_information_logo_item_content_description, option.getTitle()));
-        detailTitleView.setText(option.getTitle());
-        detailSummaryView.setText(option.getSummary());
-        detailView.setText(option.getDetail());
+    private void handleEvent(VisitorInformationUiEvent event) {
         if (speechManager != null) {
-            speechManager.startSpeak(option.getDetail(), MySettings.getSpeakDefaultOption());
+            speechManager.startSpeak(event.getSpeechText(), MySettings.getSpeakDefaultOption());
             concludeSpeak(speechManager);
         }
     }
