@@ -19,6 +19,11 @@ backend/.pytest_cache/
 backend/app/data/*.json
 *.env
 backend/.env
+whatsapp-bridge/.auth
+whatsapp-bridge/dist
+whatsapp-bridge/node_modules
+whatsapp-bridge/.env
+
 
 # Logs
 *.log
