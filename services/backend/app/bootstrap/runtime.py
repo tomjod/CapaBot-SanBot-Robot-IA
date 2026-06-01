@@ -30,10 +30,12 @@ def build_runtime(settings: BackendSettings | None = None) -> BackendRuntime:
     )
     telegram_provider = _build_telegram_provider(resolved_settings)
     email_provider = _build_email_provider(resolved_settings)
+    whatsapp_provider = _build_whatsapp_provider(resolved_settings)
     notification_service = NotificationService(
         contact_repository=repository,
         telegram_provider=telegram_provider,
         email_provider=email_provider,
+        whatsapp_provider=whatsapp_provider,
         message_builder=TemplateMessageBuilder(),
     )
     telegram_onboarding_service = TelegramOnboardingService(
@@ -88,3 +90,11 @@ def _build_email_provider(settings: BackendSettings):
     if settings.allow_stub_delivery:
         return StubEmailProvider(status="accepted")
     return StubEmailProvider(status="skipped")
+
+
+def _build_whatsapp_provider(settings: BackendSettings):
+    from backend.app.infra.providers.whatsapp_provider import StubWhatsAppProvider
+
+    if settings.allow_stub_delivery:
+        return StubWhatsAppProvider(status="accepted")
+    return StubWhatsAppProvider(status="unavailable")
