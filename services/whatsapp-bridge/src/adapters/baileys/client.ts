@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import makeWASocket, {
   Browsers,
+  fetchLatestBaileysVersion,
   type WASocket,
   useMultiFileAuthState,
 } from '@whiskeysockets/baileys';
@@ -18,16 +19,17 @@ export async function createBaileysClient(authDir: string): Promise<CreateClient
 
   const { state, saveCreds } = await useMultiFileAuthState(resolvedAuthDir);
 
+  // Fetch the current WhatsApp Web version instead of pinning a stale one.
+  // A pinned/outdated version is a known cause of 405 / connectionFailure
+  // right after scanning the QR.
+  const { version, isLatest } = await fetchLatestBaileysVersion();
+  console.log(`[whatsapp] using WA version ${version.join('.')} (isLatest=${isLatest})`);
+
   const sock = makeWASocket({
     auth: state,
     logger: pino({ level: 'silent' }),
     markOnlineOnConnect: false,
-
-    // workaround para el 405 reportado recientemente
-    version: [2, 3000, 1034074495],
-
-    // aunque la doc lo remarca sobre todo para pairing code,
-    // hoy vale la pena probar un browser lógico tipo macOS
+    version,
     browser: Browsers.macOS('Google Chrome'),
   });
 
