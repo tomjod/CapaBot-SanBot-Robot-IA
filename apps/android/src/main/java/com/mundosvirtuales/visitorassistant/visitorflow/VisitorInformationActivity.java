@@ -25,8 +25,6 @@ import com.sanbot.opensdk.function.unit.SpeechManager;
 
 import java.util.List;
 
-import static com.mundosvirtuales.visitorassistant.MyUtils.concludeSpeak;
-
 public class VisitorInformationActivity extends TopBaseActivity {
 
     public static Intent createIntent(Context context) {
@@ -112,8 +110,10 @@ public class VisitorInformationActivity extends TopBaseActivity {
 
     private void handleEvent(VisitorInformationUiEvent event) {
         if (speechManager != null) {
+            // startSpeak is asynchronous; the robot reads the detail without blocking.
+            // We must NOT call concludeSpeak here: it busy-waits on the UI thread until
+            // speech ends, freezing the screen on every card tap (ANR).
             speechManager.startSpeak(event.getSpeechText(), MySettings.getSpeakDefaultOption());
-            concludeSpeak(speechManager);
         }
     }
 
