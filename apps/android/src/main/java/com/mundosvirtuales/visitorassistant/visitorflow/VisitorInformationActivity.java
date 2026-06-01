@@ -70,6 +70,9 @@ public class VisitorInformationActivity extends TopBaseActivity {
             finish();
         });
 
+        // Build content synchronously so the companies are present on the first
+        // frame (no blank flash). The catalog is cheap and option rows are now
+        // inflated only once, so this stays light.
         viewModel.start();
     }
 
@@ -89,22 +92,30 @@ public class VisitorInformationActivity extends TopBaseActivity {
     }
 
     private void bindOptions(LinearLayout container, List<VisitorInformationOptionItem> options, String selectedOptionId) {
-        container.removeAllViews();
-        LayoutInflater inflater = LayoutInflater.from(this);
-        for (VisitorInformationOptionItem option : options) {
-            View optionView = inflater.inflate(R.layout.item_visitor_information_option, container, false);
-            ImageView logoView = optionView.findViewById(R.id.visitorInformationOptionLogo);
-            TextView titleView = optionView.findViewById(R.id.visitorInformationOptionTitle);
-            TextView summaryView = optionView.findViewById(R.id.visitorInformationOptionSummary);
+        // Inflate the option rows only once; re-inflating on every selection
+        // (re-decoding logos) is what made tapping a company feel sluggish.
+        if (container.getChildCount() != options.size()) {
+            container.removeAllViews();
+            LayoutInflater inflater = LayoutInflater.from(this);
+            for (VisitorInformationOptionItem option : options) {
+                View optionView = inflater.inflate(R.layout.item_visitor_information_option, container, false);
+                ImageView logoView = optionView.findViewById(R.id.visitorInformationOptionLogo);
+                TextView titleView = optionView.findViewById(R.id.visitorInformationOptionTitle);
+                TextView summaryView = optionView.findViewById(R.id.visitorInformationOptionSummary);
 
-            logoView.setImageResource(option.getLogoResId());
-            logoView.setContentDescription(getString(R.string.visitor_information_logo_item_content_description, option.getTitle()));
-            titleView.setText(option.getTitle());
-            summaryView.setText(option.getSummary());
+                logoView.setImageResource(option.getLogoResId());
+                logoView.setContentDescription(getString(R.string.visitor_information_logo_item_content_description, option.getTitle()));
+                titleView.setText(option.getTitle());
+                summaryView.setText(option.getSummary());
 
-            optionView.setActivated(option.getId().equals(selectedOptionId));
-            optionView.setOnClickListener(view -> viewModel.onOptionSelected(option.getId()));
-            container.addView(optionView);
+                final String optionId = option.getId();
+                optionView.setOnClickListener(view -> viewModel.onOptionSelected(optionId));
+                container.addView(optionView);
+            }
+        }
+        // Cheap per-render work: just move the selection highlight.
+        for (int i = 0; i < container.getChildCount() && i < options.size(); i++) {
+            container.getChildAt(i).setActivated(options.get(i).getId().equals(selectedOptionId));
         }
     }
 
