@@ -11,7 +11,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.1.3'
+        classpath 'com.android.tools.build:gradle:4.2.2'
         configurations {
             all*.exclude group: 'com.google.code.gson'
         }
@@ -21,7 +21,7 @@ buildscript {
 apply plugin: 'com.android.application'
 
 def localProperties = new Properties()
-def localPropertiesFile = rootProject.file('local.properties')
+def localPropertiesFile = file('local.properties')
 if (localPropertiesFile.exists()) {
     localPropertiesFile.withInputStream { stream ->
         localProperties.load(stream)

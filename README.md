@@ -6,11 +6,18 @@ The robot greets visitors, registers them through a conversational flow, and dis
 
 ## Repository Layout
 
+## Repository Layout
+
 | Path | Description |
 |------|-------------|
-| `apps/android/` | Android app (Java) running on the Sanbot robot. Visitor flow, voice/face interaction, AIML conversation, OpenAI integration. Gradle project root. |
-| `services/backend/` | Python FastAPI service. Brokers notifications across Telegram, Email and WhatsApp. Hosts a Telegram onboarding bot and an admin HTTP UI. Clean / Hexagonal Architecture. |
-| `services/whatsapp-bridge/` | Node/TypeScript microservice wrapping Baileys (`@whiskeysockets/baileys`). Exposes a small REST API the backend calls to send WhatsApp messages. |
+| `apps/android/` | Android app (Java) for the Sanbot robot. Gradle project root. |
+| `services/backend/` | Python FastAPI notification service (Telegram, Email, WhatsApp). |
+| `services/whatsapp-bridge/` | Node/TypeScript microservice wrapping Baileys for WhatsApp delivery. |
+
+See [CLAUDE.md](CLAUDE.md) for build commands and architecture details.
+
+## Pipeline Implemented
+![Alt text](readme-images/Pipeline.jpg?raw=true "Pipeline")
 
 See [CLAUDE.md](CLAUDE.md) for build commands, architecture details, and conventions.
 
