@@ -9,6 +9,7 @@ from backend.app.bootstrap.settings import BackendSettings
 from backend.app.infra.providers.email_provider import MailtrapEmailProvider, SmtpEmailProvider, StubEmailProvider
 from backend.app.infra.json_pending_registrations import JsonPendingTelegramRegistrationRepository
 from backend.app.infra.providers.telegram_provider import StubTelegramProvider, TelegramBotProvider
+from backend.app.infra.providers.whatsapp_provider import StubWhatsAppProvider, WhatsAppBridgeProvider
 from backend.app.runtime import build_runtime
 
 
@@ -62,8 +63,28 @@ class RuntimeWiringTest(unittest.TestCase):
 
         self.assertIsInstance(runtime.telegram_provider, StubTelegramProvider)
         self.assertIsInstance(runtime.email_provider, StubEmailProvider)
+        self.assertIsInstance(runtime.whatsapp_provider, StubWhatsAppProvider)
         self.assertIsInstance(runtime.pending_registration_repository, JsonPendingTelegramRegistrationRepository)
         self.assertFalse(runtime.settings.allow_stub_delivery)
+
+    def test_uses_whatsapp_bridge_provider_when_base_url_is_present(self) -> None:
+        env = {
+            "VISITOR_NOTIFY_WHATSAPP_BRIDGE_BASE_URL": "http://bridge:3001",
+            "VISITOR_NOTIFY_WHATSAPP_INTERNAL_API_KEY": "secret-key",
+            "VISITOR_NOTIFY_WHATSAPP_TIMEOUT_SECONDS": "12",
+        }
+
+        runtime = build_runtime(BackendSettings.from_env(env))
+
+        self.assertIsInstance(runtime.whatsapp_provider, WhatsAppBridgeProvider)
+        self.assertEqual(runtime.settings.whatsapp_bridge_base_url, "http://bridge:3001")
+        self.assertEqual(runtime.settings.whatsapp_internal_api_key, "secret-key")
+        self.assertEqual(runtime.settings.whatsapp_timeout_seconds, 12.0)
+
+    def test_whatsapp_falls_back_to_stub_when_no_base_url(self) -> None:
+        runtime = build_runtime(BackendSettings.from_env({"VISITOR_NOTIFY_ALLOW_STUB_DELIVERY": "true"}))
+
+        self.assertIsInstance(runtime.whatsapp_provider, StubWhatsAppProvider)
 
     def test_uses_real_providers_when_credentials_are_present(self) -> None:
         env = {

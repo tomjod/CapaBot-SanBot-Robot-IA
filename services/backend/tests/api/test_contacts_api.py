@@ -62,10 +62,10 @@ class ContactsRouteContractTest(unittest.TestCase):
             "company_label": "Transformapp",
             "enabled": True,
             "phone": "+56 9 1234 5678",
-            "channels": {"telegram": True, "email": False},
+            "channels": {"telegram": True, "email": False, "whatsapp": True},
             "available": True,
         })
-        self.assertEqual(payload[1]["channels"], {"telegram": False, "email": True})
+        self.assertEqual(payload[1]["channels"], {"telegram": False, "email": True, "whatsapp": True})
         self.assertTrue(payload[1]["available"])
 
     def test_marks_unavailable_contacts_explicitly(self) -> None:
@@ -76,7 +76,7 @@ class ContactsRouteContractTest(unittest.TestCase):
                     display_name="Operaciones",
                     job_title="Coordinador",
                     company="data_center",
-                    phone="+56 9 1111 1111",
+                    phone=None,
                     telegram_chat_id=None,
                     email=None,
                     email_enabled=False,
@@ -93,8 +93,8 @@ class ContactsRouteContractTest(unittest.TestCase):
             "company": "data_center",
             "company_label": "Data Center",
             "enabled": True,
-            "phone": "+56 9 1111 1111",
-            "channels": {"telegram": False, "email": False},
+            "phone": None,
+            "channels": {"telegram": False, "email": False, "whatsapp": False},
             "available": False,
         }])
 
@@ -136,7 +136,7 @@ class ContactsRouteContractTest(unittest.TestCase):
             )
         )
 
-        self.assertEqual(payload["channels"], {"telegram": True, "email": True})
+        self.assertEqual(payload["channels"], {"telegram": True, "email": True, "whatsapp": True})
         self.assertFalse(payload["available"])
         self.assertFalse(payload["enabled"])
 

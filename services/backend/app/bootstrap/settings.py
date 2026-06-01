@@ -50,6 +50,9 @@ class BackendSettings:
     email_from_name: str | None
     email_smtp_port: int
     email_timeout_seconds: float
+    whatsapp_bridge_base_url: str | None
+    whatsapp_internal_api_key: str | None
+    whatsapp_timeout_seconds: float
     allow_stub_delivery: bool
 
     @classmethod
@@ -87,5 +90,8 @@ class BackendSettings:
             email_from_name=values.get("VISITOR_NOTIFY_EMAIL_FROM_NAME") or None,
             email_smtp_port=int(values.get("VISITOR_NOTIFY_EMAIL_SMTP_PORT", "25")),
             email_timeout_seconds=float(values.get("VISITOR_NOTIFY_EMAIL_TIMEOUT_SECONDS", "10")),
+            whatsapp_bridge_base_url=values.get("VISITOR_NOTIFY_WHATSAPP_BRIDGE_BASE_URL") or None,
+            whatsapp_internal_api_key=values.get("VISITOR_NOTIFY_WHATSAPP_INTERNAL_API_KEY") or None,
+            whatsapp_timeout_seconds=float(values.get("VISITOR_NOTIFY_WHATSAPP_TIMEOUT_SECONDS", "10")),
             allow_stub_delivery=_parse_bool(values.get("VISITOR_NOTIFY_ALLOW_STUB_DELIVERY"), False),
         )

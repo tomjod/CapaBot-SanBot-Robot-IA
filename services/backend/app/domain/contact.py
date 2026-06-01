@@ -94,8 +94,12 @@ class Contact:
         return self.email is not None and self.email_enabled
 
     @property
+    def whatsapp_available(self) -> bool:
+        return self.normalized_phone is not None
+
+    @property
     def available(self) -> bool:
-        return self.enabled and (self.telegram_available or self.email_available)
+        return self.enabled and (self.telegram_available or self.email_available or self.whatsapp_available)
 
     @property
     def company_label(self) -> str | None:
@@ -127,6 +131,7 @@ class Contact:
             "channels": {
                 "telegram": self.telegram_available,
                 "email": self.email_available,
+                "whatsapp": self.whatsapp_available,
             },
             "available": self.available,
         }

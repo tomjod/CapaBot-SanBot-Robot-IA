@@ -55,7 +55,7 @@ class ContactsCrudEndpointsTest(unittest.TestCase):
         )
 
         self.assertEqual(created.status_code, 201)
-        self.assertEqual(created.json()["channels"], {"telegram": False, "email": True})
+        self.assertEqual(created.json()["channels"], {"telegram": False, "email": True, "whatsapp": True})
         self.assertFalse(created.json()["available"])
         self.assertFalse(created.json()["enabled"])
 
@@ -84,7 +84,7 @@ class ContactsCrudEndpointsTest(unittest.TestCase):
         self.assertEqual(updated.json()["display_name"], "People Ops")
         self.assertEqual(updated.json()["company"], "micro_renta")
         self.assertTrue(updated.json()["enabled"])
-        self.assertEqual(updated.json()["channels"], {"telegram": False, "email": False})
+        self.assertEqual(updated.json()["channels"], {"telegram": False, "email": False, "whatsapp": True})
 
         companies = self.client.get("/contacts/companies")
         self.assertEqual(companies.status_code, 200)

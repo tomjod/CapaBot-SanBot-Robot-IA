@@ -52,6 +52,7 @@ def full_contact_response(contact: Contact) -> dict[str, Any]:
         "channels": {
             "telegram": contact.telegram_available,
             "email": contact.email_available,
+            "whatsapp": contact.whatsapp_available,
         },
         "available": contact.available,
     }

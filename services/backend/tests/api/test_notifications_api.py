@@ -42,6 +42,7 @@ class NotificationsRouteContractTest(unittest.TestCase):
                 status="accepted",
                 telegram=ChannelDelivery("accepted"),
                 email=ChannelDelivery("skipped"),
+                whatsapp=ChannelDelivery("skipped"),
                 retryable=False,
                 detail="Listo, avisamos a Ventas por Telegram.",
             )
@@ -52,7 +53,7 @@ class NotificationsRouteContractTest(unittest.TestCase):
         self.assertEqual(status_code, 200)
         self.assertEqual(response, {
             "status": "accepted",
-            "channels": {"telegram": "accepted", "email": "skipped"},
+            "channels": {"telegram": "accepted", "email": "skipped", "whatsapp": "skipped"},
             "retryable": False,
             "detail": "Listo, avisamos a Ventas por Telegram.",
         })
@@ -63,6 +64,7 @@ class NotificationsRouteContractTest(unittest.TestCase):
                 status="unavailable",
                 telegram=ChannelDelivery("unavailable"),
                 email=ChannelDelivery("unavailable"),
+                whatsapp=ChannelDelivery("unavailable"),
                 retryable=False,
                 detail="Ventas no tiene Telegram disponible y el email no está habilitado.",
             )
@@ -72,7 +74,10 @@ class NotificationsRouteContractTest(unittest.TestCase):
 
         self.assertEqual(status_code, 200)
         self.assertEqual(response["status"], "unavailable")
-        self.assertEqual(response["channels"], {"telegram": "unavailable", "email": "unavailable"})
+        self.assertEqual(
+            response["channels"],
+            {"telegram": "unavailable", "email": "unavailable", "whatsapp": "unavailable"},
+        )
         self.assertIn("no tiene Telegram disponible", response["detail"])
 
     def test_returns_dual_channel_business_contract_when_email_is_attempted(self) -> None:
@@ -81,6 +86,7 @@ class NotificationsRouteContractTest(unittest.TestCase):
                 status="delivered_or_queued",
                 telegram=ChannelDelivery("sent"),
                 email=ChannelDelivery("accepted"),
+                whatsapp=ChannelDelivery("skipped"),
                 retryable=False,
                 detail="Listo, avisamos a Ventas por Telegram y email.",
             )
@@ -91,7 +97,7 @@ class NotificationsRouteContractTest(unittest.TestCase):
         self.assertEqual(status_code, 200)
         self.assertEqual(response, {
             "status": "delivered_or_queued",
-            "channels": {"telegram": "sent", "email": "accepted"},
+            "channels": {"telegram": "sent", "email": "accepted", "whatsapp": "skipped"},
             "retryable": False,
             "detail": "Listo, avisamos a Ventas por Telegram y email.",
         })
@@ -127,6 +133,7 @@ class NotificationsRouteContractTest(unittest.TestCase):
                 status="accepted",
                 telegram=ChannelDelivery("accepted"),
                 email=ChannelDelivery("skipped"),
+                whatsapp=ChannelDelivery("skipped"),
                 retryable=False,
                 detail="Listo, avisamos a Ventas por Telegram.",
             )

@@ -56,8 +56,14 @@ class JsonContactRepositoryTest(unittest.TestCase):
         self.assertEqual([contact.id for contact in contacts], ["ventas-1", "rrhh-1"])
         self.assertEqual(contacts[0].company_label, "Transformapp")
         self.assertEqual(contacts[0].normalized_phone, "56912345678")
-        self.assertEqual(contacts[0].to_summary()["channels"], {"telegram": True, "email": True})
-        self.assertEqual(contacts[1].to_summary()["channels"], {"telegram": False, "email": True})
+        self.assertEqual(
+            contacts[0].to_summary()["channels"],
+            {"telegram": True, "email": True, "whatsapp": True},
+        )
+        self.assertEqual(
+            contacts[1].to_summary()["channels"],
+            {"telegram": False, "email": True, "whatsapp": True},
+        )
         self.assertTrue(contacts[0].enabled)
         self.assertTrue(contacts[1].enabled)
         self.assertTrue(contacts[1].available)

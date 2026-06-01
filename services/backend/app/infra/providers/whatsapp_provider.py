@@ -14,22 +14,27 @@ class SupportsWhatsAppClient(Protocol):
         ...
 
 
-ClientFactory = Callable[[str, float], SupportsWhatsAppClient]
+ClientFactory = Callable[[str, float, str | None], SupportsWhatsAppClient]
 
 
-def _default_client_factory(base_url: str, timeout: float) -> SupportsWhatsAppClient:
-    return _HttpxWhatsAppClient(base_url, timeout)
+def _default_client_factory(base_url: str, timeout: float, api_key: str | None) -> SupportsWhatsAppClient:
+    return _HttpxWhatsAppClient(base_url, timeout, api_key)
 
 
 class _HttpxWhatsAppClient:
-    def __init__(self, base_url: str, timeout: float) -> None:
+    def __init__(self, base_url: str, timeout: float, api_key: str | None = None) -> None:
         self._base_url = base_url.rstrip("/")
         self._timeout = timeout
+        self._api_key = api_key
 
     def post(self, endpoint: str, json: Mapping[str, object]) -> Mapping[str, object]:
         url = f"{self._base_url}/{endpoint.lstrip('/')}"
+        headers: dict[str, str] = {}
+        if self._api_key:
+            # The bridge gates every route except /health behind this header.
+            headers["x-api-key"] = self._api_key
         with httpx.Client(timeout=self._timeout) as client:
-            response = client.post(url, json=dict(json))
+            response = client.post(url, json=dict(json), headers=headers)
             response.raise_for_status()
             return response.json()
 
@@ -40,10 +45,12 @@ class WhatsAppBridgeProvider:
     def __init__(
         self,
         bridge_base_url: str,
+        internal_api_key: str | None = None,
         timeout: float = 10.0,
         client_factory: ClientFactory | None = None,
     ) -> None:
         self._bridge_base_url = bridge_base_url.rstrip("/")
+        self._internal_api_key = internal_api_key
         self._timeout = timeout
         self._client_factory = client_factory or _default_client_factory
 
@@ -51,14 +58,15 @@ class WhatsAppBridgeProvider:
         if not contact.normalized_phone:
             return ChannelDelivery(status="unavailable")
 
-        client = self._client_factory(self._bridge_base_url, self._timeout)
+        client = self._client_factory(self._bridge_base_url, self._timeout, self._internal_api_key)
 
         try:
+            # Bridge contract: POST /messages/text with {phone, text}.
             response = client.post(
-                "/messages/send",
+                "/messages/text",
                 {
                     "phone": contact.normalized_phone,
-                    "message": message,
+                    "text": message,
                 },
             )
         except httpx.TimeoutException:

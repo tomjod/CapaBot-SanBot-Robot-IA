@@ -9,6 +9,7 @@ from backend.app.domain.notification import NotificationRequest
 from backend.app.domain.notification_service import NotificationService
 from backend.app.infra.providers.email_provider import FakeEmailProvider
 from backend.app.infra.providers.telegram_provider import FakeTelegramProvider
+from backend.app.infra.providers.whatsapp_provider import StubWhatsAppProvider
 
 
 class InMemoryContactRepository:
@@ -43,7 +44,10 @@ class NotificationServiceTest(unittest.TestCase):
         outcome = service.submit(self._request())
 
         self.assertEqual(outcome.status, "delivered_or_queued")
-        self.assertEqual(outcome.to_dict()["channels"], {"telegram": "sent", "email": "skipped"})
+        self.assertEqual(
+            outcome.to_dict()["channels"],
+            {"telegram": "sent", "email": "skipped", "whatsapp": "skipped"},
+        )
         self.assertEqual(outcome.to_dict()["detail"], "Listo, avisamos a Ventas por Telegram.")
         self.assertFalse(outcome.retryable)
 
@@ -60,7 +64,10 @@ class NotificationServiceTest(unittest.TestCase):
         outcome = service.submit(self._request())
 
         self.assertEqual(outcome.status, "unavailable")
-        self.assertEqual(outcome.to_dict()["channels"], {"telegram": "unavailable", "email": "unavailable"})
+        self.assertEqual(
+            outcome.to_dict()["channels"],
+            {"telegram": "unavailable", "email": "unavailable", "whatsapp": "unavailable"},
+        )
         self.assertIn("no tiene Telegram disponible", outcome.to_dict()["detail"])
         self.assertFalse(outcome.retryable)
 
@@ -87,7 +94,10 @@ class NotificationServiceTest(unittest.TestCase):
         outcome = service.submit(self._request())
 
         self.assertEqual(outcome.status, "unavailable")
-        self.assertEqual(outcome.to_dict()["channels"], {"telegram": "unavailable", "email": "unavailable"})
+        self.assertEqual(
+            outcome.to_dict()["channels"],
+            {"telegram": "unavailable", "email": "unavailable", "whatsapp": "unavailable"},
+        )
         self.assertFalse(outcome.retryable)
 
     def test_uses_template_fallback_when_no_rewriter_is_configured(self) -> None:
@@ -170,7 +180,10 @@ class NotificationServiceTest(unittest.TestCase):
 
         self.assertEqual(outcome.status, "failed")
         self.assertTrue(outcome.retryable)
-        self.assertEqual(outcome.to_dict()["channels"], {"telegram": "failed", "email": "failed"})
+        self.assertEqual(
+            outcome.to_dict()["channels"],
+            {"telegram": "failed", "email": "failed", "whatsapp": "skipped"},
+        )
         self.assertEqual(outcome.to_dict()["detail"], "No pudimos avisar a Ventas por Telegram ni email.")
 
     def test_reports_telegram_and_email_statuses_when_both_channels_are_attempted(self) -> None:
@@ -196,8 +209,101 @@ class NotificationServiceTest(unittest.TestCase):
 
         self.assertEqual(outcome.status, "delivered_or_queued")
         self.assertFalse(outcome.retryable)
-        self.assertEqual(outcome.to_dict()["channels"], {"telegram": "sent", "email": "accepted"})
+        self.assertEqual(
+            outcome.to_dict()["channels"],
+            {"telegram": "sent", "email": "accepted", "whatsapp": "skipped"},
+        )
         self.assertEqual(outcome.to_dict()["detail"], "Listo, avisamos a Ventas por Telegram y email.")
+
+
+    def test_whatsapp_only_contact_is_delivered_when_whatsapp_succeeds(self) -> None:
+        repository = InMemoryContactRepository(
+            [Contact(id="ventas-1", display_name="Ventas", company="transformapp", phone="+56 9 1234 5678")]
+        )
+        service = NotificationService(
+            contact_repository=repository,
+            telegram_provider=FakeTelegramProvider(status="failed"),
+            whatsapp_provider=StubWhatsAppProvider(status="sent"),
+            message_builder=TemplateMessageBuilder(),
+        )
+
+        outcome = service.submit(self._request())
+
+        self.assertEqual(outcome.status, "delivered_or_queued")
+        self.assertEqual(
+            outcome.to_dict()["channels"],
+            {"telegram": "unavailable", "email": "skipped", "whatsapp": "sent"},
+        )
+        self.assertEqual(outcome.to_dict()["detail"], "Listo, avisamos a Ventas por WhatsApp.")
+        self.assertFalse(outcome.retryable)
+
+    def test_whatsapp_failure_marks_failed_and_retryable(self) -> None:
+        repository = InMemoryContactRepository(
+            [Contact(id="ventas-1", display_name="Ventas", company="transformapp", phone="+56 9 1234 5678")]
+        )
+        service = NotificationService(
+            contact_repository=repository,
+            telegram_provider=FakeTelegramProvider(status="failed"),
+            whatsapp_provider=StubWhatsAppProvider(status="failed"),
+            message_builder=TemplateMessageBuilder(),
+        )
+
+        outcome = service.submit(self._request())
+
+        self.assertEqual(outcome.status, "failed")
+        self.assertTrue(outcome.retryable)
+        self.assertEqual(outcome.to_dict()["channels"]["whatsapp"], "failed")
+        self.assertEqual(outcome.to_dict()["detail"], "No pudimos avisar a Ventas por WhatsApp.")
+
+    def test_whatsapp_accepted_contributes_to_accepted_status(self) -> None:
+        repository = InMemoryContactRepository(
+            [Contact(id="ventas-1", display_name="Ventas", company="transformapp", phone="+56 9 1234 5678")]
+        )
+        service = NotificationService(
+            contact_repository=repository,
+            telegram_provider=FakeTelegramProvider(status="failed"),
+            whatsapp_provider=StubWhatsAppProvider(status="accepted"),
+            message_builder=TemplateMessageBuilder(),
+        )
+
+        outcome = service.submit(self._request())
+
+        self.assertEqual(outcome.status, "accepted")
+        self.assertEqual(outcome.to_dict()["channels"]["whatsapp"], "accepted")
+
+    def test_success_detail_lists_all_three_channels(self) -> None:
+        repository = InMemoryContactRepository(
+            [
+                Contact(
+                    id="ventas-1",
+                    display_name="Ventas",
+                    company="transformapp",
+                    phone="+56 9 1234 5678",
+                    telegram_chat_id="chat-1",
+                    email="ventas@example.com",
+                    email_enabled=True,
+                )
+            ]
+        )
+        service = NotificationService(
+            contact_repository=repository,
+            telegram_provider=FakeTelegramProvider(status="sent"),
+            email_provider=FakeEmailProvider(status="accepted"),
+            whatsapp_provider=StubWhatsAppProvider(status="sent"),
+            message_builder=TemplateMessageBuilder(),
+        )
+
+        outcome = service.submit(self._request())
+
+        self.assertEqual(outcome.status, "delivered_or_queued")
+        self.assertEqual(
+            outcome.to_dict()["channels"],
+            {"telegram": "sent", "email": "accepted", "whatsapp": "sent"},
+        )
+        self.assertEqual(
+            outcome.to_dict()["detail"],
+            "Listo, avisamos a Ventas por Telegram, email y WhatsApp.",
+        )
 
 
 if __name__ == "__main__":

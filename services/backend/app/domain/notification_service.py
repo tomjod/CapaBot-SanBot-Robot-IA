@@ -19,7 +19,7 @@ class NotificationService:
         contact_repository: ContactRepository,
         telegram_provider: TelegramProvider,
         message_builder: TemplateMessageBuilder,
-        whatsapp_provider: WhatsappProvider,
+        whatsapp_provider: WhatsappProvider | None = None,
         email_provider: EmailProvider | None = None,
     ) -> None:
         self._contact_repository = contact_repository
@@ -63,18 +63,18 @@ class NotificationService:
         else:
             email_status = ChannelDelivery("skipped")
 
-        if contact.normalized_phone:
+        if contact.normalized_phone and self._whatsapp_provider is not None:
             whatsapp_status = self._whatsapp_provider.send(contact, message, request)
         else:
             whatsapp_status = ChannelDelivery("skipped")
 
         return NotificationOutcome(
-            status=self._resolve_business_status(contact, telegram_status, email_status),
+            status=self._resolve_business_status(contact, telegram_status, email_status, whatsapp_status),
             telegram=telegram_status,
             email=email_status,
             whatsapp=whatsapp_status,
-            retryable=self._resolve_retryable(telegram_status, email_status),
-            detail=self._build_detail(contact, telegram_status, email_status),
+            retryable=self._resolve_retryable(telegram_status, email_status, whatsapp_status),
+            detail=self._build_detail(contact, telegram_status, email_status, whatsapp_status),
         )
 
     def _build_detail(
@@ -82,70 +82,93 @@ class NotificationService:
         contact: Contact,
         telegram_status: ChannelDelivery,
         email_status: ChannelDelivery,
+        whatsapp_status: ChannelDelivery,
     ) -> str:
-        business_status = self._resolve_business_status(contact, telegram_status, email_status)
+        business_status = self._resolve_business_status(
+            contact, telegram_status, email_status, whatsapp_status
+        )
         if business_status in {"accepted", "delivered_or_queued"}:
-            return self._build_success_detail(contact, telegram_status, email_status)
+            return self._build_success_detail(contact, telegram_status, email_status, whatsapp_status)
         if business_status == "unavailable":
             return self._build_unavailable_detail(contact)
-        return self._build_failure_detail(contact, telegram_status, email_status)
+        return self._build_failure_detail(contact, telegram_status, email_status, whatsapp_status)
 
     @staticmethod
     def _resolve_business_status(
         contact: Contact,
         telegram_status: ChannelDelivery,
         email_status: ChannelDelivery,
+        whatsapp_status: ChannelDelivery,
     ) -> str:
-        if telegram_status.status == "sent" or email_status.status == "sent":
+        statuses = (telegram_status, email_status, whatsapp_status)
+
+        if any(channel.status == "sent" for channel in statuses):
             return "delivered_or_queued"
 
-        if telegram_status.status == "accepted" or email_status.status == "accepted":
+        if any(channel.status == "accepted" for channel in statuses):
             return "accepted"
 
         if not contact.available:
             return "unavailable"
 
-        if telegram_status.status == "unavailable" and email_status.status in {"skipped", "unavailable"}:
+        if all(channel.status in {"skipped", "unavailable"} for channel in statuses):
             return "unavailable"
 
         return "failed"
 
     @staticmethod
-    def _resolve_retryable(telegram_status: ChannelDelivery, email_status: ChannelDelivery) -> bool:
-        return telegram_status.status == "failed" or email_status.status == "failed"
+    def _resolve_retryable(
+        telegram_status: ChannelDelivery,
+        email_status: ChannelDelivery,
+        whatsapp_status: ChannelDelivery,
+    ) -> bool:
+        return any(
+            channel.status == "failed"
+            for channel in (telegram_status, email_status, whatsapp_status)
+        )
 
     @staticmethod
+    def _join_channels(labels: list[str], conjunction: str) -> str:
+        if len(labels) == 1:
+            return labels[0]
+        return f"{', '.join(labels[:-1])} {conjunction} {labels[-1]}"
+
+    @classmethod
     def _build_success_detail(
+        cls,
         contact: Contact,
         telegram_status: ChannelDelivery,
         email_status: ChannelDelivery,
+        whatsapp_status: ChannelDelivery,
     ) -> str:
-        telegram_ok = telegram_status.status in {"accepted", "sent"}
-        email_ok = email_status.status in {"accepted", "sent"}
-        if telegram_ok and email_ok:
-            return f"Listo, avisamos a {contact.display_name} por Telegram y email."
-        if telegram_ok:
-            return f"Listo, avisamos a {contact.display_name} por Telegram."
-        if email_ok:
-            return f"Listo, avisamos a {contact.display_name} por email."
+        channels = (
+            ("Telegram", telegram_status),
+            ("email", email_status),
+            ("WhatsApp", whatsapp_status),
+        )
+        delivered = [label for label, channel in channels if channel.status in {"accepted", "sent"}]
+        if delivered:
+            return f"Listo, avisamos a {contact.display_name} por {cls._join_channels(delivered, 'y')}."
         return f"La notificación para {contact.display_name} fue aceptada."
 
     @staticmethod
     def _build_unavailable_detail(contact: Contact) -> str:
         return f"{contact.display_name} no tiene Telegram disponible y el email no está habilitado."
 
-    @staticmethod
+    @classmethod
     def _build_failure_detail(
+        cls,
         contact: Contact,
         telegram_status: ChannelDelivery,
         email_status: ChannelDelivery,
+        whatsapp_status: ChannelDelivery,
     ) -> str:
-        telegram_failed = telegram_status.status == "failed"
-        email_failed = email_status.status == "failed"
-        if telegram_failed and email_failed:
-            return f"No pudimos avisar a {contact.display_name} por Telegram ni email."
-        if telegram_failed:
-            return f"No pudimos avisar a {contact.display_name} por Telegram."
-        if email_failed:
-            return f"No pudimos avisar a {contact.display_name} por email."
+        channels = (
+            ("Telegram", telegram_status),
+            ("email", email_status),
+            ("WhatsApp", whatsapp_status),
+        )
+        failed = [label for label, channel in channels if channel.status == "failed"]
+        if failed:
+            return f"No pudimos avisar a {contact.display_name} por {cls._join_channels(failed, 'ni')}."
         return f"No pudimos completar la notificación para {contact.display_name}."

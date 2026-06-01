@@ -20,6 +20,7 @@ class BackendRuntime:
     telegram_onboarding_service: TelegramOnboardingService
     telegram_provider: Any
     email_provider: Any
+    whatsapp_provider: Any
 
 
 def build_runtime(settings: BackendSettings | None = None) -> BackendRuntime:
@@ -50,6 +51,7 @@ def build_runtime(settings: BackendSettings | None = None) -> BackendRuntime:
         telegram_onboarding_service=telegram_onboarding_service,
         telegram_provider=telegram_provider,
         email_provider=email_provider,
+        whatsapp_provider=whatsapp_provider,
     )
 
 
@@ -93,8 +95,14 @@ def _build_email_provider(settings: BackendSettings):
 
 
 def _build_whatsapp_provider(settings: BackendSettings):
-    from backend.app.infra.providers.whatsapp_provider import StubWhatsAppProvider
+    from backend.app.infra.providers.whatsapp_provider import StubWhatsAppProvider, WhatsAppBridgeProvider
 
+    if settings.whatsapp_bridge_base_url:
+        return WhatsAppBridgeProvider(
+            bridge_base_url=settings.whatsapp_bridge_base_url,
+            internal_api_key=settings.whatsapp_internal_api_key,
+            timeout=settings.whatsapp_timeout_seconds,
+        )
     if settings.allow_stub_delivery:
         return StubWhatsAppProvider(status="accepted")
     return StubWhatsAppProvider(status="unavailable")
