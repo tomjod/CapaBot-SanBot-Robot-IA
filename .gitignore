@@ -7,6 +7,7 @@ apps/android/.gradle/
 *.iml
 
 # Local config
+local.properties
 apps/android/local.properties
 services/backend/.venv/
 services/backend/__pycache__/
