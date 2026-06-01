@@ -34,14 +34,15 @@ public class VisitorInformationViewModel {
             stateStore.setState(new VisitorInformationUiState(new ArrayList<VisitorInformationOptionItem>(), null, 0, "", "", ""));
             return;
         }
-        selectOption(options.get(0).getId());
+        // Show the first company on entry but stay silent until the visitor taps one.
+        selectOption(options.get(0).getId(), false);
     }
 
     public void onOptionSelected(String optionId) {
-        selectOption(optionId);
+        selectOption(optionId, true);
     }
 
-    private void selectOption(String optionId) {
+    private void selectOption(String optionId, boolean speak) {
         VisitorInformationOption selected = null;
         List<VisitorInformationOptionItem> items = new ArrayList<>();
         for (VisitorInformationOption option : options) {
@@ -64,6 +65,8 @@ public class VisitorInformationViewModel {
                 selected.getSummary(),
                 selected.getDetail()
         ));
-        eventDispatcher.emit(new VisitorInformationUiEvent(selected.getDetail()));
+        if (speak) {
+            eventDispatcher.emit(new VisitorInformationUiEvent(selected.getDetail()));
+        }
     }
 }

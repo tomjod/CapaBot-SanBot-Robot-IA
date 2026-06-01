@@ -16,7 +16,7 @@ import static org.junit.Assert.assertNull;
 public class VisitorInformationViewModelTest {
 
     @Test
-    public void startSelectsFirstOptionAndEmitsSpeechEvent() {
+    public void startSelectsFirstOptionWithoutSpeaking() {
         VisitorInformationViewModel viewModel = new VisitorInformationViewModel(new FakeCatalogSource(options()));
         List<VisitorInformationUiState> states = new ArrayList<>();
         List<VisitorInformationUiEvent> events = new ArrayList<>();
@@ -28,12 +28,12 @@ public class VisitorInformationViewModelTest {
         assertEquals("tour", states.get(0).getSelectedOptionId());
         assertEquals("Tour guiado", states.get(0).getSelectedTitle());
         assertEquals(2, states.get(0).getOptions().size());
-        assertEquals(1, events.size());
-        assertEquals("Detalle tour", events.get(0).getSpeechText());
+        // Entry must stay silent until the visitor taps a company.
+        assertEquals(0, events.size());
     }
 
     @Test
-    public void selectingUnknownOptionFallsBackToFirstAvailableOption() {
+    public void tappingAnOptionSpeaksAndUnknownFallsBackToFirstOption() {
         VisitorInformationViewModel viewModel = new VisitorInformationViewModel(new FakeCatalogSource(options()));
         List<VisitorInformationUiState> states = new ArrayList<>();
         List<VisitorInformationUiEvent> events = new ArrayList<>();
@@ -44,7 +44,9 @@ public class VisitorInformationViewModelTest {
 
         assertEquals(2, states.size());
         assertEquals("tour", states.get(1).getSelectedOptionId());
-        assertEquals("Detalle tour", events.get(1).getSpeechText());
+        // Only the tap emits speech; start did not.
+        assertEquals(1, events.size());
+        assertEquals("Detalle tour", events.get(0).getSpeechText());
     }
 
     @Test
