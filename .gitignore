@@ -1,29 +1,28 @@
 # Build output
-/build/
-**/build/                
-.gradle/
+apps/android/build/
+apps/android/.gradle/
 
 # IDE config
-.idea/                   
-*.iml                    
+.idea/
+*.iml
 
 # Local config
-local.properties
-backend/.venv/
-backend/__pycache__/
-backend/.pytest_cache/
+apps/android/local.properties
+services/backend/.venv/
+services/backend/__pycache__/
+services/backend/.pytest_cache/
 **/__pycache__/
 *.pyc
 .qwen/
 .claude/
 .settings/
-backend/app/data/*.json
+services/backend/app/data/*.json
 *.env
-backend/.env
-whatsapp-bridge/.auth
-whatsapp-bridge/dist
-whatsapp-bridge/node_modules
-whatsapp-bridge/.env
+services/backend/.env
+services/whatsapp-bridge/.auth
+services/whatsapp-bridge/dist
+services/whatsapp-bridge/node_modules
+services/whatsapp-bridge/.env
 
 
 # Logs
