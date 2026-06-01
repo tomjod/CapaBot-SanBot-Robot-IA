@@ -63,7 +63,6 @@ android {
         versionCode 20201220
         versionName "4.1.1" //change also proprieties.txt in Hari folder
 
-        android.defaultConfig.javaCompileOptions.annotationProcessorOptions.includeCompileClasspath = true
         buildConfigField "String", "OPENAI_API_KEY", "\"${openAiApiKey}\""
         buildConfigField "String", "ORGANIZATION_ID", "\"${organizationId}\""
         buildConfigField "String", "PROJECT_ID", "\"${projectId}\""
