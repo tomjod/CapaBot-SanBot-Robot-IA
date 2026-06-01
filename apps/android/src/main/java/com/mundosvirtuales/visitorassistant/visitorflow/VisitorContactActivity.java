@@ -15,7 +15,6 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.mundosvirtuales.visitorassistant.BuildConfig;
 import com.mundosvirtuales.visitorassistant.MySettings;
@@ -57,6 +56,12 @@ public class VisitorContactActivity extends TopBaseActivity {
     private ListView contactsList;
     private Button retryButton;
     private Button finishButton;
+    private View successOverlay;
+    private TextView successMessageView;
+    private TextView successCountdownView;
+    private Button successHomeButton;
+    private boolean successShown;
+    private int successCountdown;
     private Handler mainHandler;
     private ExecutorService contactBindingExecutor;
     private int contactBindingGeneration;
@@ -86,6 +91,10 @@ public class VisitorContactActivity extends TopBaseActivity {
         contactsList = findViewById(R.id.visitorContacts);
         retryButton = findViewById(R.id.visitorRetry);
         finishButton = findViewById(R.id.visitorFinish);
+        successOverlay = findViewById(R.id.visitorSuccessOverlay);
+        successMessageView = findViewById(R.id.visitorSuccessMessage);
+        successCountdownView = findViewById(R.id.visitorSuccessCountdown);
+        successHomeButton = findViewById(R.id.visitorSuccessHome);
 
         titleView.setText(R.string.visitor_flow_title);
         visitorName = buildVisitorName();
@@ -137,6 +146,7 @@ public class VisitorContactActivity extends TopBaseActivity {
 
         retryButton.setOnClickListener(view -> viewModel.onRetryRequested());
         finishButton.setOnClickListener(view -> returnToBase());
+        successHomeButton.setOnClickListener(view -> returnToBase());
 
         contactsList.postDelayed(viewModel::start, 120);
     }
@@ -178,7 +188,7 @@ public class VisitorContactActivity extends TopBaseActivity {
 
     public void render(VisitorContactUiState state) {
         runOnUiThread(() -> {
-            maybeShowSuccessToast(state);
+            showSuccessIfNeeded(state);
             statusView.setText(state.getStatusMessage());
             statusView.setVisibility(state.isStatusVisible() ? View.VISIBLE : View.GONE);
 
@@ -199,10 +209,39 @@ public class VisitorContactActivity extends TopBaseActivity {
         });
     }
 
-    private void maybeShowSuccessToast(VisitorContactUiState state) {
-        if (state.isSuccess() && state.getSuccessMessage() != null && !state.getSuccessMessage().trim().isEmpty()) {
-            Toast.makeText(this, state.getSuccessMessage(), Toast.LENGTH_SHORT).show();
+    private static final int SUCCESS_AUTO_RETURN_SECONDS = 8;
+
+    private final Runnable successTick = new Runnable() {
+        @Override
+        public void run() {
+            if (isFinishing()) {
+                return;
+            }
+            successCountdown--;
+            if (successCountdown <= 0) {
+                returnToBase();
+                return;
+            }
+            successCountdownView.setText(getString(R.string.visitor_flow_success_countdown, successCountdown));
+            mainHandler.postDelayed(this, 1000);
         }
+    };
+
+    private void showSuccessIfNeeded(VisitorContactUiState state) {
+        if (!state.isSuccess() || successShown) {
+            return;
+        }
+        successShown = true;
+        String message = state.getSuccessMessage();
+        successMessageView.setText(message == null ? "" : message);
+        successCountdown = SUCCESS_AUTO_RETURN_SECONDS;
+        successCountdownView.setText(getString(R.string.visitor_flow_success_countdown, successCountdown));
+        successOverlay.setVisibility(View.VISIBLE);
+        // Our explicit countdown takes over auto-return; stop the generic idle timer.
+        if (idleHomeController != null) {
+            idleHomeController.stop();
+        }
+        mainHandler.postDelayed(successTick, 1000);
     }
 
     private void bindContacts(List<VisitorDtos.ContactSummary> contacts) {

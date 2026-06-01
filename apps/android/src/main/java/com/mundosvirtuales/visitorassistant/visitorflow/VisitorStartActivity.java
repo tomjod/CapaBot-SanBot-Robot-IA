@@ -25,7 +25,6 @@ public class VisitorStartActivity extends TopBaseActivity {
     private static final String EXTRA_VISITOR_NAME = "name";
 
     private Button talkButton;
-    private Button leaveMessageButton;
     private Button requestInformationButton;
     private TextView legacyBaseLink;
     private TextView statusView;
@@ -52,7 +51,6 @@ public class VisitorStartActivity extends TopBaseActivity {
         setContentView(R.layout.activity_visitor_start);
 
         talkButton = findViewById(R.id.visitorStartTalkToPerson);
-        leaveMessageButton = findViewById(R.id.visitorStartLeaveMessage);
         requestInformationButton = findViewById(R.id.visitorStartRequestInformation);
         legacyBaseLink = findViewById(R.id.visitorStartLegacyBaseLink);
         statusView = findViewById(R.id.visitorStartStatus);
@@ -79,7 +77,6 @@ public class VisitorStartActivity extends TopBaseActivity {
         viewModel.observe(this::render, this::handleEvent);
 
         talkButton.setOnClickListener(view -> viewModel.onVisitReasonSelected(VisitorStartNavigation.VisitReason.TALK_TO_PERSON));
-        leaveMessageButton.setOnClickListener(view -> viewModel.onVisitReasonSelected(VisitorStartNavigation.VisitReason.LEAVE_MESSAGE));
         requestInformationButton.setOnClickListener(view -> viewModel.onVisitReasonSelected(VisitorStartNavigation.VisitReason.REQUEST_INFORMATION));
         legacyBaseLink.setPaintFlags(legacyBaseLink.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
         legacyBaseLink.setOnClickListener(view -> viewModel.onVisitReasonSelected(VisitorStartNavigation.VisitReason.LEGACY_BASE));
@@ -127,10 +124,8 @@ public class VisitorStartActivity extends TopBaseActivity {
             boolean legacyEnabled = state.isLegacyAccessEnabled();
 
             talkButton.setEnabled(receptionEnabled);
-            leaveMessageButton.setEnabled(receptionEnabled);
             requestInformationButton.setEnabled(informationEnabled);
             talkButton.setAlpha(receptionEnabled ? 1f : 0.45f);
-            leaveMessageButton.setAlpha(receptionEnabled ? 1f : 0.45f);
             requestInformationButton.setAlpha(informationEnabled ? 1f : 0.45f);
             legacyBaseLink.setEnabled(legacyEnabled);
             legacyBaseLink.setAlpha(legacyEnabled ? 1f : 0.5f);

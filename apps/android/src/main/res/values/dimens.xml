@@ -7,8 +7,20 @@
     <dimen name="visitor_content_width">720dp</dimen>
     <dimen name="visitor_panel_padding">20dp</dimen>
     <dimen name="visitor_panel_radius">18dp</dimen>
-    <dimen name="visitor_button_height">56dp</dimen>
+    <dimen name="visitor_button_height">72dp</dimen>
+    <dimen name="visitor_touch_min">88dp</dimen>
+    <dimen name="visitor_progress_size">64dp</dimen>
+    <dimen name="visitor_spacing_xs">4dp</dimen>
     <dimen name="visitor_spacing_sm">8dp</dimen>
     <dimen name="visitor_spacing_md">30dp</dimen>
     <dimen name="visitor_spacing_lg">24dp</dimen>
+    <dimen name="visitor_spacing_xl">40dp</dimen>
+    <!-- Iconography -->
+    <dimen name="visitor_state_icon">96dp</dimen>
+    <dimen name="visitor_button_icon">32dp</dimen>
+    <!-- Logo slots -->
+    <dimen name="visitor_logo_lg_width">220dp</dimen>
+    <dimen name="visitor_logo_lg_height">72dp</dimen>
+    <dimen name="visitor_logo_md_width">120dp</dimen>
+    <dimen name="visitor_logo_md_height">52dp</dimen>
 </resources>
