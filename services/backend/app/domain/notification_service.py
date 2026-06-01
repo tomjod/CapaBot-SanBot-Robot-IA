@@ -35,6 +35,7 @@ class NotificationService:
                 status="unavailable",
                 telegram=ChannelDelivery("unavailable"),
                 email=ChannelDelivery("unavailable"),
+                whatsapp=ChannelDelivery("unavailable"),
                 retryable=False,
                 detail="No encontramos el contacto solicitado.",
             )
@@ -62,10 +63,16 @@ class NotificationService:
         else:
             email_status = ChannelDelivery("skipped")
 
+        if contact.normalized_phone:
+            whatsapp_status = self._whatsapp_provider.send(contact, message, request)
+        else:
+            whatsapp_status = ChannelDelivery("skipped")
+
         return NotificationOutcome(
             status=self._resolve_business_status(contact, telegram_status, email_status),
             telegram=telegram_status,
             email=email_status,
+            whatsapp=whatsapp_status,
             retryable=self._resolve_retryable(telegram_status, email_status),
             detail=self._build_detail(contact, telegram_status, email_status),
         )
