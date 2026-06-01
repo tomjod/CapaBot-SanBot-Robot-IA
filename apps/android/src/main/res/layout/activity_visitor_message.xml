@@ -12,7 +12,7 @@
         android:padding="@dimen/visitor_screen_padding">
 
     <LinearLayout
-        android:layout_width="@dimen/visitor_content_width"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@drawable/visitor_panel_background"
         android:orientation="vertical"
@@ -46,24 +46,24 @@
         <ProgressBar
             android:id="@+id/visitorMessageProgress"
             style="?android:attr/progressBarStyleLarge"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="@dimen/visitor_progress_size"
+            android:layout_height="@dimen/visitor_progress_size"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="@dimen/visitor_spacing_md" />
     </LinearLayout>
 
     <TextView
         android:id="@+id/visitorMessageListHint"
-        android:layout_width="@dimen/visitor_content_width"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/visitor_spacing_md"
         android:text="@string/visitor_message_list_hint"
         android:textColor="@color/visitorTextSecondary"
-        android:textSize="16sp" />
+        android:textSize="18sp" />
 
     <ListView
         android:id="@+id/visitorMessageContacts"
-        android:layout_width="@dimen/visitor_content_width"
+        android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="@dimen/visitor_spacing_md"
         android:layout_weight="1"
@@ -71,7 +71,7 @@
         android:dividerHeight="12dp" />
 
     <LinearLayout
-        android:layout_width="@dimen/visitor_content_width"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/visitor_spacing_md"
         android:background="@drawable/visitor_panel_background"
@@ -147,7 +147,7 @@
         android:visibility="gone">
 
         <LinearLayout
-            android:layout_width="@dimen/visitor_content_width"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/visitor_panel_background"
             android:gravity="center_horizontal"

@@ -25,7 +25,7 @@
     <color name="visitorSurface">#FFFFFFFF</color>
     <color name="visitorSurfaceMuted">#F8FAFD</color>
     <color name="visitorTextPrimary">#1F2937</color>
-    <color name="visitorTextSecondary">#64748B</color>
+    <color name="visitorTextSecondary">#475569</color>
     <color name="visitorBadgeReady">#DDF5E8</color>
     <color name="visitorBadgeReadyText">#1B5E20</color>
     <color name="visitorBadgeMuted">#FFF3E0</color>

@@ -71,6 +71,7 @@ android {
         buildConfigField "String", "VISITOR_DEVICE_ID", "\"${visitorDeviceId}\""
         buildConfigField "String", "VISITOR_LOCATION_LABEL", "\"${visitorLocationLabel}\""
 
+        vectorDrawables.useSupportLibrary = true
     }
     buildTypes {
         release {

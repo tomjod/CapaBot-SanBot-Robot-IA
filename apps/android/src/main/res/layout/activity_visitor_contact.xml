@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/visitor_screen_background">
@@ -12,7 +13,7 @@
         android:padding="@dimen/visitor_screen_padding">
 
     <LinearLayout
-        android:layout_width="@dimen/visitor_content_width"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@drawable/visitor_panel_background"
         android:orientation="vertical"
@@ -46,24 +47,24 @@
         <ProgressBar
             android:id="@+id/visitorProgress"
             style="?android:attr/progressBarStyleLarge"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="@dimen/visitor_progress_size"
+            android:layout_height="@dimen/visitor_progress_size"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="@dimen/visitor_spacing_md" />
     </LinearLayout>
 
     <TextView
         android:id="@+id/visitorListHint"
-        android:layout_width="@dimen/visitor_content_width"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/visitor_spacing_md"
         android:text="@string/visitor_flow_list_hint"
         android:textColor="@color/visitorTextSecondary"
-        android:textSize="16sp" />
+        android:textSize="18sp" />
 
     <ListView
         android:id="@+id/visitorContacts"
-        android:layout_width="@dimen/visitor_content_width"
+        android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="@dimen/visitor_spacing_md"
         android:layout_weight="1"
@@ -71,7 +72,7 @@
         android:dividerHeight="12dp" />
 
     <LinearLayout
-        android:layout_width="@dimen/visitor_content_width"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/visitor_spacing_md"
         android:gravity="center"
@@ -110,18 +111,25 @@
         android:visibility="gone">
 
         <LinearLayout
-            android:layout_width="@dimen/visitor_content_width"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/visitor_panel_background"
             android:gravity="center_horizontal"
             android:orientation="vertical"
             android:padding="@dimen/visitor_panel_padding">
 
+            <ImageView
+                android:layout_width="@dimen/visitor_state_icon"
+                android:layout_height="@dimen/visitor_state_icon"
+                android:contentDescription="@null"
+                app:srcCompat="@drawable/ic_visitor_maintenance" />
+
             <TextView
                 android:id="@+id/visitorMaintenanceTitle"
                 style="@style/VisitorTitleText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/visitor_spacing_md"
                 android:gravity="center" />
 
             <TextView
@@ -131,6 +139,68 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/visitor_spacing_md"
                 android:gravity="center" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Success overlay: full-screen, unmissable, auto-returns to reception -->
+    <LinearLayout
+        android:id="@+id/visitorSuccessOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/visitor_screen_background"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="@dimen/visitor_screen_padding"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/visitor_panel_background"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:padding="@dimen/visitor_panel_padding">
+
+            <ImageView
+                android:layout_width="@dimen/visitor_state_icon"
+                android:layout_height="@dimen/visitor_state_icon"
+                android:contentDescription="@null"
+                app:srcCompat="@drawable/ic_visitor_success" />
+
+            <TextView
+                style="@style/VisitorTitleText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/visitor_spacing_md"
+                android:gravity="center"
+                android:text="@string/visitor_flow_success_title"
+                android:textColor="@color/visitorBadgeReadyText" />
+
+            <TextView
+                android:id="@+id/visitorSuccessMessage"
+                style="@style/VisitorBodyText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/visitor_spacing_md"
+                android:gravity="center" />
+
+            <TextView
+                android:id="@+id/visitorSuccessCountdown"
+                style="@style/VisitorListHintText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/visitor_spacing_md"
+                android:gravity="center" />
+
+            <Button
+                android:id="@+id/visitorSuccessHome"
+                style="@style/VisitorPrimaryButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/visitor_spacing_md"
+                android:text="@string/visitor_flow_success_home" />
         </LinearLayout>
     </LinearLayout>
 

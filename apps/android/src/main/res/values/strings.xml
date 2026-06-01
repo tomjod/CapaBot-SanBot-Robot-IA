@@ -97,6 +97,9 @@
     <string name="visitor_flow_contact_ready">Disponible ahora</string>
     <string name="visitor_flow_contact_unavailable_badge">No disponible</string>
     <string name="visitor_flow_success">Listo, ya avisé a %1$s.</string>
+    <string name="visitor_flow_success_title">¡Listo!</string>
+    <string name="visitor_flow_success_home">Volver a recepción</string>
+    <string name="visitor_flow_success_countdown">Vuelvo a recepción en %1$d s…</string>
     <string name="visitor_flow_failed">No pude completar el aviso en este momento. Inténtelo nuevamente.</string>
     <string name="visitor_flow_load_failed">No pude mostrar los contactos en este momento. Inténtelo nuevamente.</string>
     <string name="visitor_flow_configuration_error">Esta opción no está disponible en este momento.</string>

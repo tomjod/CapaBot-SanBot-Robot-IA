@@ -16,7 +16,8 @@
             android:name=".visitorflow.VisitorTouchHomeActivity"
             android:exported="true"
             android:hardwareAccelerated="true"
-            android:launchMode="singleTask">
+            android:launchMode="singleTask"
+            android:screenOrientation="landscape">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" /> <!-- activity first -->
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -26,7 +27,8 @@
             android:name=".visitorflow.VisitorStartActivity"
             android:exported="true"
             android:hardwareAccelerated="true"
-            android:launchMode="singleTask" />
+            android:launchMode="singleTask"
+            android:screenOrientation="landscape" />
         <activity
             android:name=".MyBaseActivity"
             android:exported="true"
@@ -49,6 +51,7 @@
         <activity
             android:name=".visitorflow.VisitorContactActivity"
             android:hardwareAccelerated="true"
+            android:screenOrientation="landscape"
             android:windowSoftInputMode="stateHidden">
             <meta-data
                 android:name="RECOGNIZE_MODE"
@@ -57,6 +60,7 @@
         <activity
             android:name=".visitorflow.VisitorLeaveMessageActivity"
             android:hardwareAccelerated="true"
+            android:screenOrientation="landscape"
             android:windowSoftInputMode="stateHidden">
             <meta-data
                 android:name="RECOGNIZE_MODE"
@@ -65,6 +69,7 @@
         <activity
             android:name=".visitorflow.VisitorInformationActivity"
             android:hardwareAccelerated="true"
+            android:screenOrientation="landscape"
             android:windowSoftInputMode="stateHidden">
             <meta-data
                 android:name="RECOGNIZE_MODE"

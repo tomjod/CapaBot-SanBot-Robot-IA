@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/visitor_screen_background">
@@ -18,12 +19,12 @@
             android:padding="@dimen/visitor_screen_padding">
 
             <LinearLayout
-                android:layout_width="@dimen/visitor_content_width"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/visitor_panel_background"
                 android:gravity="center_horizontal"
                 android:orientation="vertical"
-                android:padding="12dp">
+                android:padding="@dimen/visitor_panel_padding">
 
                 <TextView
                     android:id="@+id/visitorStartTitle"
@@ -45,20 +46,18 @@
             </LinearLayout>
 
             <LinearLayout
-                android:layout_width="@dimen/visitor_content_width"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:background="@drawable/visitor_panel_background"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="@dimen/visitor_panel_padding">
 
                 <TextView
+                    style="@style/VisitorSectionHeader"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/visitor_start_choose_option"
-                    android:textColor="@color/visitorTextPrimary"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
+                    android:text="@string/visitor_start_choose_option" />
 
                 <Button
                     android:id="@+id/visitorStartTalkToPerson"
@@ -66,15 +65,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/visitor_spacing_md"
+                    android:drawableStart="@drawable/ic_visitor_talk"
                     android:text="@string/visitor_start_talk_to_person" />
-
-                <Button
-                    android:id="@+id/visitorStartLeaveMessage"
-                    style="@style/VisitorSecondaryButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="30dp"
-                    android:text="@string/visitor_start_leave_message" />
 
                 <Button
                     android:id="@+id/visitorStartRequestInformation"
@@ -82,6 +74,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/visitor_spacing_md"
+                    android:drawableStart="@drawable/ic_visitor_info"
                     android:text="@string/visitor_start_request_information" />
 
                 <TextView
@@ -97,8 +90,8 @@
                 <ProgressBar
                     android:id="@+id/visitorStartCheckingProgress"
                     style="?android:attr/progressBarStyle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_width="@dimen/visitor_progress_size"
+                    android:layout_height="@dimen/visitor_progress_size"
                     android:layout_gravity="center_horizontal"
                     android:layout_marginTop="@dimen/visitor_spacing_sm"
                     android:visibility="gone" />
@@ -107,51 +100,54 @@
                     android:id="@+id/visitorStartMaintenanceOverlay"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="@dimen/visitor_spacing_md"
                     android:background="@drawable/visitor_panel_background"
                     android:gravity="center_horizontal"
                     android:orientation="vertical"
-                    android:padding="12dp"
+                    android:padding="@dimen/visitor_panel_padding"
                     android:visibility="gone">
+
+                    <ImageView
+                        android:layout_width="@dimen/visitor_state_icon"
+                        android:layout_height="@dimen/visitor_state_icon"
+                        android:contentDescription="@null"
+                        app:srcCompat="@drawable/ic_visitor_maintenance" />
 
                     <TextView
                         android:id="@+id/visitorStartMaintenanceTitle"
-                        style="@style/VisitorBodyText"
+                        style="@style/VisitorSectionHeader"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/visitor_spacing_md"
                         android:gravity="center"
-                        android:textColor="@color/visitorBadgeMutedText"
-                        android:textSize="20sp"
-                        android:textStyle="bold" />
+                        android:textColor="@color/visitorBadgeMutedText" />
 
                     <TextView
                         android:id="@+id/visitorStartMaintenanceMessage"
                         style="@style/VisitorBodyText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:gravity="center"
-                        android:textSize="16sp" />
+                        android:layout_marginTop="@dimen/visitor_spacing_sm"
+                        android:gravity="center" />
 
                     <Button
                         android:id="@+id/visitorStartMaintenanceRetry"
                         style="@style/VisitorSecondaryButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="@dimen/visitor_spacing_md"
                         android:text="@string/visitor_maintenance_retry" />
                 </LinearLayout>
             </LinearLayout>
 
             <TextView
                 android:id="@+id/visitorStartLegacyBaseLink"
+                style="@style/VisitorLinkText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/visitor_spacing_md"
-                android:padding="4dp"
-                android:text="@string/visitor_start_legacy_base_link"
-                android:textColor="@color/colorPrimaryDark"
-                android:textSize="14sp" />
+                android:padding="@dimen/visitor_spacing_xs"
+                android:text="@string/visitor_start_legacy_base_link" />
 
         </LinearLayout>
 
