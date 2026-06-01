@@ -5,7 +5,7 @@ from typing import Protocol
 from backend.app.domain.contact import Contact
 from backend.app.domain.message_builder import TemplateMessageBuilder
 from backend.app.domain.notification import NotificationRequest
-from backend.app.domain.providers import ChannelDelivery, EmailProvider, NotificationOutcome, TelegramProvider
+from backend.app.domain.providers import ChannelDelivery, EmailProvider, NotificationOutcome, TelegramProvider, WhatsappProvider
 
 
 class ContactRepository(Protocol):
@@ -19,12 +19,14 @@ class NotificationService:
         contact_repository: ContactRepository,
         telegram_provider: TelegramProvider,
         message_builder: TemplateMessageBuilder,
+        whatsapp_provider: WhatsappProvider,
         email_provider: EmailProvider | None = None,
     ) -> None:
         self._contact_repository = contact_repository
         self._telegram_provider = telegram_provider
         self._message_builder = message_builder
         self._email_provider = email_provider
+        self._whatsapp_provider = whatsapp_provider
 
     def submit(self, request: NotificationRequest) -> NotificationOutcome:
         contact = self._contact_repository.get_contact(request.contact_id)
@@ -42,6 +44,7 @@ class NotificationService:
                 status="unavailable",
                 telegram=ChannelDelivery("unavailable"),
                 email=ChannelDelivery("unavailable"),
+                whatsapp=ChannelDelivery("unavailable"),
                 retryable=False,
                 detail=self._build_unavailable_detail(contact),
             )

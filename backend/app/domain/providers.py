@@ -25,6 +25,7 @@ class NotificationOutcome:
     status: BusinessStatus
     telegram: ChannelDelivery
     email: ChannelDelivery
+    whatsapp: ChannelDelivery
     retryable: bool
     detail: str | None = None
 
@@ -34,6 +35,7 @@ class NotificationOutcome:
             "channels": {
                 "telegram": self.telegram.status,
                 "email": self.email.status,
+                "whatsapp": self.whatsapp.status,
             },
             "retryable": self.retryable,
         }
@@ -48,5 +50,9 @@ class TelegramProvider(Protocol):
 
 
 class EmailProvider(Protocol):
+    def send(self, contact: Contact, message: str, request: NotificationRequest) -> ChannelDelivery:
+        ...
+
+class WhatsappProvider(Protocol):
     def send(self, contact: Contact, message: str, request: NotificationRequest) -> ChannelDelivery:
         ...
