@@ -10,6 +10,16 @@ During the movement. a face detection module is used to trigger a voice interact
 [![Sanbot Interaction](http://i3.ytimg.com/)](https://youtu.be/)
 -->
 
+## Repository Layout
+
+| Path | Description |
+|------|-------------|
+| `apps/android/` | Android app (Java) for the Sanbot robot. Gradle project root. |
+| `services/backend/` | Python FastAPI notification service (Telegram, Email, WhatsApp). |
+| `services/whatsapp-bridge/` | Node/TypeScript microservice wrapping Baileys for WhatsApp delivery. |
+
+See [CLAUDE.md](CLAUDE.md) for build commands and architecture details.
+
 ## Pipeline Implemented
 ![Alt text](readme-images/Pipeline.jpg?raw=true "Pipeline")
 
