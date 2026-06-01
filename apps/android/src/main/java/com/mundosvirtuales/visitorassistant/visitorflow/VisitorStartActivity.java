@@ -26,6 +26,7 @@ public class VisitorStartActivity extends TopBaseActivity {
 
     private Button talkButton;
     private Button requestInformationButton;
+    private View actionsContainer;
     private TextView legacyBaseLink;
     private TextView statusView;
     private ProgressBar checkingProgressBar;
@@ -52,6 +53,7 @@ public class VisitorStartActivity extends TopBaseActivity {
 
         talkButton = findViewById(R.id.visitorStartTalkToPerson);
         requestInformationButton = findViewById(R.id.visitorStartRequestInformation);
+        actionsContainer = findViewById(R.id.visitorStartActions);
         legacyBaseLink = findViewById(R.id.visitorStartLegacyBaseLink);
         statusView = findViewById(R.id.visitorStartStatus);
         checkingProgressBar = findViewById(R.id.visitorStartCheckingProgress);
@@ -123,12 +125,14 @@ public class VisitorStartActivity extends TopBaseActivity {
             boolean informationEnabled = state.isInformationAccessEnabled();
             boolean legacyEnabled = state.isLegacyAccessEnabled();
 
-            talkButton.setEnabled(receptionEnabled);
-            requestInformationButton.setEnabled(informationEnabled);
-            talkButton.setAlpha(receptionEnabled ? 1f : 0.45f);
-            requestInformationButton.setAlpha(informationEnabled ? 1f : 0.45f);
-            legacyBaseLink.setEnabled(legacyEnabled);
-            legacyBaseLink.setAlpha(legacyEnabled ? 1f : 0.5f);
+            // Show whatever is already actionable right away — only reception (Talk)
+            // depends on the backend check; Information/legacy do not, so the screen
+            // never sits as a bare spinner while availability is verified.
+            boolean actionsVisible = receptionEnabled || informationEnabled;
+            talkButton.setVisibility(receptionEnabled ? View.VISIBLE : View.GONE);
+            requestInformationButton.setVisibility(informationEnabled ? View.VISIBLE : View.GONE);
+            actionsContainer.setVisibility(actionsVisible ? View.VISIBLE : View.GONE);
+            legacyBaseLink.setVisibility(legacyEnabled ? View.VISIBLE : View.GONE);
 
             statusView.setText(checking ? state.getMessage() : "");
             statusView.setVisibility(checking ? View.VISIBLE : View.GONE);
