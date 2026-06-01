@@ -15,6 +15,7 @@ backend/.pytest_cache/
 **/__pycache__/
 *.pyc
 .qwen/
+.claude/
 .settings/
 backend/app/data/*.json
 *.env
