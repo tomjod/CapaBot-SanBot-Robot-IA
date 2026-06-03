@@ -54,6 +54,8 @@ class BackendSettings:
     whatsapp_internal_api_key: str | None
     whatsapp_timeout_seconds: float
     allow_stub_delivery: bool
+    enable_telegram: bool
+    enable_email: bool
 
     @classmethod
     def from_env(
@@ -94,4 +96,6 @@ class BackendSettings:
             whatsapp_internal_api_key=values.get("VISITOR_NOTIFY_WHATSAPP_INTERNAL_API_KEY") or None,
             whatsapp_timeout_seconds=float(values.get("VISITOR_NOTIFY_WHATSAPP_TIMEOUT_SECONDS", "10")),
             allow_stub_delivery=_parse_bool(values.get("VISITOR_NOTIFY_ALLOW_STUB_DELIVERY"), False),
+            enable_telegram=_parse_bool(values.get("VISITOR_NOTIFY_ENABLE_TELEGRAM"), False),
+            enable_email=_parse_bool(values.get("VISITOR_NOTIFY_ENABLE_EMAIL"), False),
         )

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass
 from typing import Any
 
@@ -18,9 +19,9 @@ class BackendRuntime:
     pending_registration_repository: JsonPendingTelegramRegistrationRepository
     notification_service: NotificationService
     telegram_onboarding_service: TelegramOnboardingService
-    telegram_provider: Any
-    email_provider: Any
     whatsapp_provider: Any
+    email_provider: Any
+    telegram_provider: Any
 
 
 def build_runtime(settings: BackendSettings | None = None) -> BackendRuntime:
@@ -29,15 +30,17 @@ def build_runtime(settings: BackendSettings | None = None) -> BackendRuntime:
     pending_registration_repository = JsonPendingTelegramRegistrationRepository(
         resolved_settings.pending_registrations_path
     )
-    telegram_provider = _build_telegram_provider(resolved_settings)
-    email_provider = _build_email_provider(resolved_settings)
+    # WhatsApp is the primary channel — built first.
     whatsapp_provider = _build_whatsapp_provider(resolved_settings)
+    email_provider = _build_email_provider(resolved_settings)
+    telegram_provider = _build_telegram_provider(resolved_settings)
+
     notification_service = NotificationService(
         contact_repository=repository,
-        telegram_provider=telegram_provider,
-        email_provider=email_provider,
-        whatsapp_provider=whatsapp_provider,
         message_builder=TemplateMessageBuilder(),
+        whatsapp_provider=whatsapp_provider,
+        email_provider=email_provider,
+        telegram_provider=telegram_provider,
     )
     telegram_onboarding_service = TelegramOnboardingService(
         repository=repository,
@@ -49,14 +52,23 @@ def build_runtime(settings: BackendSettings | None = None) -> BackendRuntime:
         pending_registration_repository=pending_registration_repository,
         notification_service=notification_service,
         telegram_onboarding_service=telegram_onboarding_service,
-        telegram_provider=telegram_provider,
-        email_provider=email_provider,
         whatsapp_provider=whatsapp_provider,
+        email_provider=email_provider,
+        telegram_provider=telegram_provider,
     )
 
 
 def _build_telegram_provider(settings: BackendSettings):
     from backend.app.infrastructure.providers.telegram_provider import StubTelegramProvider, TelegramBotProvider
+
+    if not settings.enable_telegram:
+        warnings.warn(
+            "Telegram channel is deprecated and disabled by default. "
+            "Set VISITOR_NOTIFY_ENABLE_TELEGRAM=true to re-enable.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return None
 
     if settings.telegram_bot_token:
         return TelegramBotProvider(
@@ -75,6 +87,9 @@ def _build_email_provider(settings: BackendSettings):
         SmtpEmailProvider,
         StubEmailProvider,
     )
+
+    if not settings.enable_email:
+        return None
 
     if settings.email_mailtrap_token and settings.email_from:
         return MailtrapEmailProvider(

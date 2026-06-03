@@ -17,16 +17,16 @@ class NotificationService:
     def __init__(
         self,
         contact_repository: ContactRepository,
-        telegram_provider: TelegramProvider,
         message_builder: TemplateMessageBuilder,
         whatsapp_provider: WhatsappProvider | None = None,
         email_provider: EmailProvider | None = None,
+        telegram_provider: TelegramProvider | None = None,
     ) -> None:
         self._contact_repository = contact_repository
-        self._telegram_provider = telegram_provider
         self._message_builder = message_builder
-        self._email_provider = email_provider
         self._whatsapp_provider = whatsapp_provider
+        self._email_provider = email_provider
+        self._telegram_provider = telegram_provider
 
     def submit(self, request: NotificationRequest) -> NotificationOutcome:
         contact = self._contact_repository.get_contact(request.contact_id)
@@ -52,10 +52,13 @@ class NotificationService:
 
         message = self._message_builder.build(contact, request)
 
-        telegram_status = ChannelDelivery("unavailable")
-        if contact.telegram_available:
-            telegram_status = self._telegram_provider.send(contact, message, request)
+        # WhatsApp — primary channel, always attempted first
+        if contact.normalized_phone and self._whatsapp_provider is not None:
+            whatsapp_status = self._whatsapp_provider.send(contact, message, request)
+        else:
+            whatsapp_status = ChannelDelivery("skipped")
 
+        # Email — secondary, disabled by default
         if contact.email_available and self._email_provider is not None:
             email_status = self._email_provider.send(contact, message, request)
         elif contact.email_available:
@@ -63,10 +66,10 @@ class NotificationService:
         else:
             email_status = ChannelDelivery("skipped")
 
-        if contact.normalized_phone and self._whatsapp_provider is not None:
-            whatsapp_status = self._whatsapp_provider.send(contact, message, request)
-        else:
-            whatsapp_status = ChannelDelivery("skipped")
+        # Telegram — deprecated, disabled by default
+        telegram_status = ChannelDelivery("unavailable")
+        if contact.telegram_available and self._telegram_provider is not None:
+            telegram_status = self._telegram_provider.send(contact, message, request)
 
         return NotificationOutcome(
             status=self._resolve_business_status(contact, telegram_status, email_status, whatsapp_status),
@@ -100,7 +103,7 @@ class NotificationService:
         email_status: ChannelDelivery,
         whatsapp_status: ChannelDelivery,
     ) -> str:
-        statuses = (telegram_status, email_status, whatsapp_status)
+        statuses = (whatsapp_status, email_status, telegram_status)
 
         if any(channel.status == "sent" for channel in statuses):
             return "delivered_or_queued"
@@ -124,7 +127,7 @@ class NotificationService:
     ) -> bool:
         return any(
             channel.status == "failed"
-            for channel in (telegram_status, email_status, whatsapp_status)
+            for channel in (whatsapp_status, email_status, telegram_status)
         )
 
     @staticmethod
@@ -142,9 +145,9 @@ class NotificationService:
         whatsapp_status: ChannelDelivery,
     ) -> str:
         channels = (
-            ("Telegram", telegram_status),
-            ("email", email_status),
             ("WhatsApp", whatsapp_status),
+            ("email", email_status),
+            ("Telegram", telegram_status),
         )
         delivered = [label for label, channel in channels if channel.status in {"accepted", "sent"}]
         if delivered:
@@ -153,7 +156,7 @@ class NotificationService:
 
     @staticmethod
     def _build_unavailable_detail(contact: Contact) -> str:
-        return f"{contact.display_name} no tiene Telegram disponible y el email no está habilitado."
+        return f"{contact.display_name} no tiene WhatsApp disponible y ningún otro canal está habilitado."
 
     @classmethod
     def _build_failure_detail(
@@ -164,9 +167,9 @@ class NotificationService:
         whatsapp_status: ChannelDelivery,
     ) -> str:
         channels = (
-            ("Telegram", telegram_status),
-            ("email", email_status),
             ("WhatsApp", whatsapp_status),
+            ("email", email_status),
+            ("Telegram", telegram_status),
         )
         failed = [label for label, channel in channels if channel.status == "failed"]
         if failed:

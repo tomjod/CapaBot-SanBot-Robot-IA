@@ -45,14 +45,31 @@ class NotificationOutcome:
 
 
 class TelegramProvider(Protocol):
+    """.. deprecated::
+
+        Telegram channel is disabled by default as of 2026-06.
+        Set ``VISITOR_NOTIFY_ENABLE_TELEGRAM=true`` to re-enable.
+        Prefer :class:`WhatsappProvider` as the primary notification channel.
+    """
+
     def send(self, contact: Contact, message: str, request: NotificationRequest) -> ChannelDelivery:
         ...
 
 
 class EmailProvider(Protocol):
+    """.. deprecated::
+
+        Email channel is disabled by default as of 2026-06.
+        Set ``VISITOR_NOTIFY_ENABLE_EMAIL=true`` to re-enable.
+        Prefer :class:`WhatsappProvider` as the primary notification channel.
+    """
+
     def send(self, contact: Contact, message: str, request: NotificationRequest) -> ChannelDelivery:
         ...
 
+
 class WhatsappProvider(Protocol):
+    """Primary notification channel. Always enabled."""
+
     def send(self, contact: Contact, message: str, request: NotificationRequest) -> ChannelDelivery:
         ...

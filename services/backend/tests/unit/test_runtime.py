@@ -59,7 +59,10 @@ class RuntimeWiringTest(unittest.TestCase):
         self.assertEqual(settings.pending_registrations_path, custom_pending_path)
 
     def test_uses_stub_providers_when_credentials_are_missing(self) -> None:
-        runtime = build_runtime(BackendSettings.from_env({}))
+        runtime = build_runtime(BackendSettings.from_env({
+            "VISITOR_NOTIFY_ENABLE_TELEGRAM": "true",
+            "VISITOR_NOTIFY_ENABLE_EMAIL": "true",
+        }))
 
         self.assertIsInstance(runtime.telegram_provider, StubTelegramProvider)
         self.assertIsInstance(runtime.email_provider, StubEmailProvider)
@@ -88,6 +91,8 @@ class RuntimeWiringTest(unittest.TestCase):
 
     def test_uses_real_providers_when_credentials_are_present(self) -> None:
         env = {
+            "VISITOR_NOTIFY_ENABLE_TELEGRAM": "true",
+            "VISITOR_NOTIFY_ENABLE_EMAIL": "true",
             "VISITOR_NOTIFY_TELEGRAM_BOT_TOKEN": "token-123",
             "VISITOR_NOTIFY_TELEGRAM_API_BASE_URL": "https://telegram.internal",
             "VISITOR_NOTIFY_TELEGRAM_TIMEOUT_SECONDS": "15",
@@ -112,6 +117,7 @@ class RuntimeWiringTest(unittest.TestCase):
 
     def test_keeps_legacy_smtp_runtime_path_available(self) -> None:
         env = {
+            "VISITOR_NOTIFY_ENABLE_EMAIL": "true",
             "VISITOR_NOTIFY_EMAIL_SMTP_HOST": "smtp.example.com",
             "VISITOR_NOTIFY_EMAIL_FROM": "robot@example.com",
             "VISITOR_NOTIFY_EMAIL_SMTP_PORT": "2525",
@@ -128,7 +134,11 @@ class RuntimeWiringTest(unittest.TestCase):
         self.assertFalse(settings.allow_stub_delivery)
 
     def test_allows_explicit_stub_delivery_for_local_seams(self) -> None:
-        settings = BackendSettings.from_env({"VISITOR_NOTIFY_ALLOW_STUB_DELIVERY": "true"})
+        settings = BackendSettings.from_env({
+            "VISITOR_NOTIFY_ALLOW_STUB_DELIVERY": "true",
+            "VISITOR_NOTIFY_ENABLE_TELEGRAM": "true",
+            "VISITOR_NOTIFY_ENABLE_EMAIL": "true",
+        })
 
         runtime = build_runtime(settings)
 

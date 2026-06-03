@@ -68,7 +68,7 @@ class NotificationServiceTest(unittest.TestCase):
             outcome.to_dict()["channels"],
             {"telegram": "unavailable", "email": "unavailable", "whatsapp": "unavailable"},
         )
-        self.assertIn("no tiene Telegram disponible", outcome.to_dict()["detail"])
+        self.assertIn("no tiene WhatsApp disponible", outcome.to_dict()["detail"])
         self.assertFalse(outcome.retryable)
 
     def test_returns_unavailable_when_contact_is_manually_disabled_even_with_channels(self) -> None:
@@ -184,7 +184,7 @@ class NotificationServiceTest(unittest.TestCase):
             outcome.to_dict()["channels"],
             {"telegram": "failed", "email": "failed", "whatsapp": "skipped"},
         )
-        self.assertEqual(outcome.to_dict()["detail"], "No pudimos avisar a Ventas por Telegram ni email.")
+        self.assertEqual(outcome.to_dict()["detail"], "No pudimos avisar a Ventas por email ni Telegram.")
 
     def test_reports_telegram_and_email_statuses_when_both_channels_are_attempted(self) -> None:
         repository = InMemoryContactRepository(
@@ -213,7 +213,7 @@ class NotificationServiceTest(unittest.TestCase):
             outcome.to_dict()["channels"],
             {"telegram": "sent", "email": "accepted", "whatsapp": "skipped"},
         )
-        self.assertEqual(outcome.to_dict()["detail"], "Listo, avisamos a Ventas por Telegram y email.")
+        self.assertEqual(outcome.to_dict()["detail"], "Listo, avisamos a Ventas por email y Telegram.")
 
 
     def test_whatsapp_only_contact_is_delivered_when_whatsapp_succeeds(self) -> None:
@@ -302,7 +302,7 @@ class NotificationServiceTest(unittest.TestCase):
         )
         self.assertEqual(
             outcome.to_dict()["detail"],
-            "Listo, avisamos a Ventas por Telegram, email y WhatsApp.",
+            "Listo, avisamos a Ventas por WhatsApp, email y Telegram.",
         )
 
 
