@@ -18,21 +18,21 @@ def submit_notification_response(service: NotificationSubmissionService, payload
     except ValueError as error:
         return 400, {
             "status": "failed",
-            "channels": {"telegram": "failed", "email": "failed"},
+            "channels": {"whatsapp": "failed", "email": "failed", "telegram": "failed"},
             "retryable": False,
             "detail": str(error),
         }
     except TimeoutError:
         return 504, {
             "status": "failed",
-            "channels": {"telegram": "failed", "email": "failed"},
+            "channels": {"whatsapp": "failed", "email": "failed", "telegram": "failed"},
             "retryable": True,
             "detail": "El backend demoró demasiado en procesar la notificación.",
         }
     except Exception:
         return 500, {
             "status": "failed",
-            "channels": {"telegram": "failed", "email": "failed"},
+            "channels": {"whatsapp": "failed", "email": "failed", "telegram": "failed"},
             "retryable": True,
             "detail": "Ocurrió un error inesperado al procesar la notificación.",
         }

@@ -124,7 +124,7 @@ class NotificationsRouteContractTest(unittest.TestCase):
         self.assertTrue(timeout_response["retryable"])
         self.assertIn("demoró demasiado", timeout_response["detail"])
         self.assertEqual(error_code, 500)
-        self.assertEqual(error_response["channels"], {"telegram": "failed", "email": "failed"})
+        self.assertEqual(error_response["channels"], {"whatsapp": "failed", "email": "failed", "telegram": "failed"})
         self.assertIn("error inesperado", error_response["detail"])
 
     def test_preserves_leave_message_reason_and_message_in_api_contract(self) -> None:
